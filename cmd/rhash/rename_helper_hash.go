@@ -96,10 +96,10 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 	// TODO(16): Check if has permission to move to destination
 	err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
 	if err == nil {
-		clog.InfoIconf(clog.PrintIconSuccess, "\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+		clog.InfoSuccessf("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
 		return nil
 	} else if errors.Is(err, cfs.ErrSameFile) {
-		clog.InfoIconf(clog.PrintIconNothing, "file %s already hashed", sourceFileInfo.GetPath())
+		clog.Infof("file %s already hashed", sourceFileInfo.GetPath())
 		return nil
 	} else if !errors.Is(err, cfs.ErrFileExists) {
 		return err
@@ -112,10 +112,10 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 
 		err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
 		if err == nil {
-			clog.InfoIconf(clog.PrintIconSuccess, "\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+			clog.InfoSuccessf("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) {
-			clog.InfoIconf(clog.PrintIconNothing, "file %s already hashed", sourceFileInfo.GetPath())
+			clog.Infof("file %s already hashed", sourceFileInfo.GetPath())
 			return nil
 		} else if !errors.Is(err, cfs.ErrFileExists) {
 			return err

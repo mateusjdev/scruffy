@@ -22,12 +22,11 @@ type StringIcon string
 
 const (
 	printDebug       StringIcon = "\x1b[30;47m DEBUG \x1b[0m "
-	printInfo        StringIcon = "\x1b[30;44m INFO \x1b[0m "
-	printWarning     StringIcon = "\x1b[30;43m WARNING \x1b[0m "
-	printError       StringIcon = "\x1b[30;41m ERROR \x1b[0m "
-	PrintIconSuccess StringIcon = "\x1b[37;42m ✔️ \x1b[0m "
-	PrintIconNothing StringIcon = "\x1b[37;44m ➖ \x1b[0m "
-	PrintIconError   StringIcon = "\x1b[37;41m ❌ \x1b[0m "
+	printInfo        StringIcon = "\x1b[37;44m INFO \x1b[0m "
+	printInfoSuccess StringIcon = "\x1b[37;42m INFO \x1b[0m "
+	printInfoError   StringIcon = "\x1b[37;41m INFO \x1b[0m "
+	printWarning     StringIcon = "\x1b[37;43m WARNING \x1b[0m "
+	printError       StringIcon = "\x1b[37;41m ERROR \x1b[0m "
 )
 
 // Ensure space between logs:
@@ -63,8 +62,13 @@ func Infof(msg string, args ...any) {
 	levelPrintfOut(LevelInfo, msg, args...)
 }
 
-func InfoIconf(icon StringIcon, msg string, args ...any) {
-	msg = string(printInfo) + string(icon) + msg
+func InfoSuccessf(msg string, args ...any) {
+	msg = string(printInfoSuccess) + msg
+	levelPrintfOut(LevelInfo, msg, args...)
+}
+
+func InfoErrorf(msg string, args ...any) {
+	msg = string(printInfoError) + msg
 	levelPrintfOut(LevelInfo, msg, args...)
 }
 

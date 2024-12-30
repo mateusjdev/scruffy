@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ARGS_MIN_TRUNCATE = 4
+	ARGS_MIN_TRUNCATE = 8
 
 	HashAlgorithmBlake2b string = "blake2b"
 	HashAlgorithmBlake3  string = "blake3"
@@ -71,7 +71,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	hash: %s`, dryRun, silent, recursive, verbose, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
 
 	if truncate < ARGS_MIN_TRUNCATE {
-		clog.Errorf("--truncate is very low, chosse >= 4 ")
+		clog.Errorf("--truncate is very low, choose >= %d", ARGS_MIN_TRUNCATE)
 		clog.ExitBecause(clog.ErrUserGeneric)
 	}
 
@@ -122,8 +122,8 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		clog.Infof("%s is in a git repo", inputPathAbs)
 	}
 
-	if cfs.IsGitRepo(outputPathAbs) {
-		if !skipGitCheck && inputPathAbs != outputPathAbs {
+	if inputPathAbs != outputPathAbs && cfs.IsGitRepo(outputPathAbs) {
+		if !skipGitCheck {
 			clog.Errorf("%s is in a git repo", outputPathAbs)
 			clog.ExitBecause(clog.ErrUserGeneric)
 		}

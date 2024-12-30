@@ -48,7 +48,7 @@ func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.Cus
 		// TODO(16): Check if has permission to move to destination
 		err := cfs.SafeRename(sourceFileInfo.GetPath(), destination)
 		if err == nil {
-			clog.InfoIconf(clog.PrintIconSuccess, "\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+			clog.InfoSuccessf("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) || errors.Is(err, cfs.ErrFileExists) {
 			continue
