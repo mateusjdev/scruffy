@@ -18,7 +18,7 @@
 - [X] TODO(12): Check if go-git need git binary, if yes, drop module
 - [X] TODO(13): Create a HashMachine interface, add Options
 - [ ] TODO(14): Check need of path validation or continue to use CustomFileInfo
-- [ ] TODO(15): Add --hash fuzzy
+- [X] TODO(15): Add --hash fuzzy
 - [ ] TODO(16): Check if has permission to move to destination
 - [ ] TODO(17): Benchark reuse(.Reset()) vs recreate
 - [X] TODO(18): Merge checkHash and getHashMachine?
@@ -26,3 +26,4 @@
 - [X] TODO(20): Move fs related to mateusjdev/cmd/filesystem
 - [ ] TODO(21): Check WalkDir error/return
 - [X] TODO(22): Make CustomFileInfo private and create through ValidatePath()
+- [ ] TODO(23): Reuse enqueuePath for rename_helper_fuzzy and rename_helper_hash

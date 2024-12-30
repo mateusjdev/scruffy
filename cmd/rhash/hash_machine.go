@@ -24,34 +24,44 @@ type HashMachine struct {
 	Options HashMachineOptions
 }
 
+const (
+	HashAlgorithmBlake2b string = "blake2b"
+	HashAlgorithmBlake3  string = "blake3"
+	HashAlgorithmMD5     string = "md5"
+	HashAlgorithmSHA1    string = "sha1"
+	HashAlgorithmSHA256  string = "sha256"
+	HashAlgorithmSHA512  string = "sha512"
+
+	HashAlgorithmFuzzy string = "fuzzy"
+)
+
+var (
+	ErrUnknownHashMethod = errors.New("hash method not valid")
+)
+
 // TODO(8): Work on lenght/truncate flag
 // Chosse between "--hash SHA224 ..." or "--hash SHA2 --lenght 224"
 func getHashAlgorithm(hash string, lenght int) (hash.Hash, error) {
-
-	hash = strings.ToLower(hash)
-
 	switch hash {
-	case "blake2b":
+	case HashAlgorithmBlake2b:
 		// lenght: fixed_256_bits (256, 384, 512)
 		return crypto.BLAKE2b_256.New(), nil
-	case "blake3":
+	case HashAlgorithmBlake3:
 		return blake3.New(lenght/2, nil), nil
-	case "fuzzy":
-		panic("Not implemented")
-	case "md5":
+	case HashAlgorithmMD5:
 		// lenght: fixed_128_bits
 		return crypto.MD5.New(), nil
-	case "sha1":
+	case HashAlgorithmSHA1:
 		// lenght: fixed_160_bits
 		return crypto.SHA1.New(), nil
-	case "sha256":
+	case HashAlgorithmSHA256:
 		// lenght: fixed_256_bits
 		return crypto.SHA256.New(), nil
-	case "sha512":
+	case HashAlgorithmSHA512:
 		// lenght: fixed_512_bits
 		return crypto.SHA512.New(), nil
 	}
-	return nil, errors.New("hash method not valid")
+	return nil, ErrUnknownHashMethod
 }
 
 func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string, error) {

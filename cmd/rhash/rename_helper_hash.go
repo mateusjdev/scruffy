@@ -9,11 +9,9 @@ import (
 	"path/filepath"
 )
 
-func workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo, hashMachine HashMachine) error {
+func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo) error {
 	clog.Debugf("Working on file \"%s\"", sourceFileInfo.GetPath())
 
-	// Get new filename (Hash)
-	// TODO(15): Add --hash fuzzy
 	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
 	clog.CheckIfError(err)
 
@@ -53,11 +51,11 @@ func workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.Custom
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func enqueuePath(inputPathInfo cfs.CustomFileInfo, outputPathInfo cfs.CustomFileInfo, hashMachine HashMachine) error {
+func (hashMachine HashMachine) enqueuePath(inputPathInfo cfs.CustomFileInfo, outputPathInfo cfs.CustomFileInfo) error {
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.GetPath())
 
 	if inputPathInfo.GetPathType() == cfs.PathIsFile {
-		return workOnFile(inputPathInfo, outputPathInfo, hashMachine)
+		return hashMachine.workOnFile(inputPathInfo, outputPathInfo)
 	}
 
 	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
@@ -73,7 +71,6 @@ func enqueuePath(inputPathInfo cfs.CustomFileInfo, outputPathInfo cfs.CustomFile
 
 		// TODO(7): Work on recursive flag
 		// Recurse into directories
-
 		if di.IsDir() {
 			if inputPathInfo.GetPath() == path {
 				return nil
@@ -82,7 +79,7 @@ func enqueuePath(inputPathInfo cfs.CustomFileInfo, outputPathInfo cfs.CustomFile
 		}
 
 		fileInfo := cfs.GetUnvalidatedPath(path, cfs.PathIsFile)
-		return workOnFile(fileInfo, outputPathInfo, hashMachine)
+		return hashMachine.workOnFile(fileInfo, outputPathInfo)
 	})
 
 	return nil

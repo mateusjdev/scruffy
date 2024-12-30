@@ -4,8 +4,13 @@ import (
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
+)
+
+const (
+	MIN_TRUNCATE = 4
 )
 
 func RenameFilesToHash(cmd *cobra.Command, args []string) {
@@ -42,6 +47,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	outputPath, _ := cmd.Flags().GetString("output")
 
 	hash, _ := cmd.Flags().GetString("hash")
+	hash = strings.ToLower(hash)
 
 	clog.Debugf(`Args:
 	dry-run: %t
@@ -54,6 +60,11 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	inputPath: %s
 	outputPath: %s
 	hash: %s`, dryRun, silent, recursive, verbose, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
+
+	if truncate < MIN_TRUNCATE {
+		clog.Errorf("--truncate is very low, chosse >= 4 ")
+		clog.ExitBecause(clog.ErrUserGeneric)
+	}
 
 	if inputPath == "" {
 		clog.Errorf("--input is empty or invalid")
@@ -113,19 +124,28 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	clog.Debugf("inputPathAbs: %s", inputPathAbs)
 	clog.Debugf("outputPathAbs: %s", outputPathAbs)
 
-	// HASH_MACHINE
+	// FUZZY_MACHINE
 
-	hashAlgorithm, err := getHashAlgorithm(hash, int(truncate))
-	clog.CheckIfError(err)
-	hashMachine := HashMachine{
-		Machine: hashAlgorithm,
-		Options: HashMachineOptions{
+	if hash == HashAlgorithmFuzzy {
+		fuzzyMachineOptions := FuzzyMachineOptions{
 			uppercase: uppercase,
 			truncate:  truncate,
-		},
+		}
+		fuzzyMachineOptions.enqueuePath(inputPathInfo, outputPathInfo)
+	} else {
+		// HASH_MACHINE
+
+		hashAlgorithm, err := getHashAlgorithm(hash, int(truncate))
+		clog.CheckIfError(err)
+		hashMachine := HashMachine{
+			Machine: hashAlgorithm,
+			Options: HashMachineOptions{
+				uppercase: uppercase,
+				truncate:  truncate,
+			},
+		}
+
+		// PATH_WALK
+		hashMachine.enqueuePath(inputPathInfo, outputPathInfo)
 	}
-
-	// PATH_WALK
-
-	enqueuePath(inputPathInfo, outputPathInfo, hashMachine)
 }

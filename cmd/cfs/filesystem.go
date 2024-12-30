@@ -34,6 +34,7 @@ func SafeRename(source string, destination string) error {
 	// BUG: if source is lowercase and output is uppercase, they are reported as diferent files
 	// This causes every file to be renamed as "uppercase_1.ext"
 	// Check need of (os.SameFile)
+
 	if source == destination {
 		return ErrSameFile
 	}
