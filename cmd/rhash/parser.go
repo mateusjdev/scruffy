@@ -33,7 +33,7 @@ func isValidPath(path string) (PathType, error) {
 	return PathIsFile, nil
 }
 
-// TODO(12): Check if go-git need git binary, if yes, drop module
+// Using go-git because it doesn't require git binary
 func isGitRepo(path string) bool {
 	_, err := git.PlainOpenWithOptions(path, &git.PlainOpenOptions{DetectDotGit: true})
 	if err != nil && err == git.ErrRepositoryNotExists {

@@ -15,7 +15,7 @@
 - [ ] TODO(9): Check need of setting log level via flags (Ex: --log INFO, DEBUG, WARNING, ...)
 - [ ] TODO(10): Recreate folder structure on destination Dir
 - [ ] TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
-- [ ] TODO(12): Check if go-git need git binary, if yes, drop module
+- [X] TODO(12): Check if go-git need git binary, if yes, drop module
 - [ ] TODO(13): Create a HashMachine interface, add Options
 - [ ] TODO(14): Check need of path validation or continue to use CustomFileInfo
 - [ ] TODO(15): Add --hash fuzzy
