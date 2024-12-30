@@ -34,7 +34,7 @@ func init() {
 	rhashCmd.Flags().BoolP("verbose", "v", false, "Show full path")
 
 	// TODO(6): Work on uppercase flag
-	rhashCmd.Flags().BoolP("uppercase", "u", false, "Convert characters to UPPERCASE when possible")
+	rhashCmd.Flags().BoolP("uppercase", "U", false, "Convert characters to UPPERCASE when possible")
 
 	// TODO(7): Work on recursive flag
 	rhashCmd.Flags().BoolP("recursive", "r", false, "Recurse DIRs, when enabled, will not accept output folder")
@@ -42,9 +42,8 @@ func init() {
 	// INFO: Ignore git checks, maybe will do something more later
 	rhashCmd.Flags().BoolP("force", "F", false, "Ignore git checks")
 
-	// TODO(8): Work on lenght/truncate flag
-	// Lenght used in filename for blake3 and fuzzy algorithms
-	rhashCmd.Flags().Int8P("lenght", "l", 16, "Truncate filename")
+	// INFO: Max value is 256(uint8)
+	rhashCmd.Flags().Uint8P("truncate", "t", 32, "Truncate filename")
 
 	// TODO(9): Check need of setting log level via flags (Ex: --log INFO, DEBUG, WARNING, ...)
 	rhashCmd.MarkFlagsMutuallyExclusive("debug", "silent")

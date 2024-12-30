@@ -3,7 +3,6 @@ package rhash
 import (
 	"errors"
 	"fmt"
-	"hash"
 	"io/fs"
 	"mateusjdev/scruffy/cmd/clog"
 	"os"
@@ -33,6 +32,8 @@ func checkIfExists(path string) (bool, error) {
 }
 
 func safeRename(source string, destination string) bool {
+	// BUG: if source is lowercase and output is uppercase, they are reported as diferent files
+	// This causes every file to be renamed as "uppercase_1.ext"
 	if source == destination {
 		clog.InfoIconf(clog.PrintIconNothing, "file %s already hashed", source)
 		return true
@@ -49,12 +50,12 @@ func safeRename(source string, destination string) bool {
 	return false
 }
 
-func workOnFile(sourceFileInfo CustomFileInfo, destinationDirInfo CustomFileInfo, hashMachine hash.Hash) error {
+func workOnFile(sourceFileInfo CustomFileInfo, destinationDirInfo CustomFileInfo, hashMachine HashMachine) error {
 	clog.Debugf("Working on file \"%s\"", sourceFileInfo.Path)
 
 	// Get new filename (Hash)
 	// TODO(15): Add --hash fuzzy
-	fileHash, err := hashFile(sourceFileInfo, hashMachine)
+	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
 	clog.CheckIfError(err)
 
 	extension := filepath.Ext(sourceFileInfo.Path)
@@ -84,7 +85,7 @@ func IsDir(path string) bool {
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func enqueuePath(inputPathInfo CustomFileInfo, outputPathInfo CustomFileInfo, hashMachine hash.Hash) error {
+func enqueuePath(inputPathInfo CustomFileInfo, outputPathInfo CustomFileInfo, hashMachine HashMachine) error {
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path)
 
 	if inputPathInfo.PathType == PathIsFile {

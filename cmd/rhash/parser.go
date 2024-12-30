@@ -72,9 +72,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	skipGitCheck, _ := cmd.Flags().GetBool("force")
 	skipGitCheck = skipGitCheck || debug || dryRun
 
-	// TODO(8): Work on lenght flag
-	// TODO(8a): Check MAX_PATH on windows
-	lenght, _ := cmd.Flags().GetInt8("lenght")
+	truncate, _ := cmd.Flags().GetUint8("truncate")
 
 	inputPath, _ := cmd.Flags().GetString("input")
 	outputPath, _ := cmd.Flags().GetString("output")
@@ -88,10 +86,10 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	verbose: %t
 	skipGitCheck: %t
 	uppercase: %t
-	lenght: %d
+	truncate: %d
 	inputPath: %s
 	outputPath: %s
-	hash: %s`, dryRun, silent, recursive, verbose, skipGitCheck, uppercase, lenght, inputPath, outputPath, hash)
+	hash: %s`, dryRun, silent, recursive, verbose, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
 
 	if inputPath == "" {
 		clog.Errorf("--input is empty or invalid")
@@ -153,23 +151,20 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 
 	// HASH_MACHINE
 
-	algorithm, err := checkHash(hash)
-	if err != nil {
-		clog.Errorf("%s: (%s)", err, hash)
-	}
-
-	// TODO(13): Create a HashMachine interface, add Options
-	// Options: {algorithm, lenght/truncate, uppercase, ...}
-	clog.Debugf("Creating HashMachine with algorithm ID: (%d)", int(algorithm))
-
-	hashMachine, err := getHashMachine(algorithm, int(lenght))
+	hashAlgorithm, err := getHashAlgorithm(hash, int(truncate))
 	clog.CheckIfError(err)
+	hashMachine := HashMachine{
+		Machine: hashAlgorithm,
+		Options: HashMachineOptions{
+			uppercase: uppercase,
+			truncate:  truncate,
+		},
+	}
 
 	// PATH_WALK
 
 	inputPathInfo := CustomFileInfo{inputPathAbs, inputPathType}
 	outputPathInfo := CustomFileInfo{outputPathAbs, outputPathType}
 
-	clog.Debugf("Enqueue")
 	enqueuePath(inputPathInfo, outputPathInfo, hashMachine)
 }
