@@ -44,7 +44,6 @@ func isGitRepo(path string) bool {
 
 func RenameFilesToHash(cmd *cobra.Command, args []string) {
 
-	// TODO(4): Move to rootCmd
 	debug, _ := cmd.Flags().GetBool("debug")
 	if debug {
 		clog.SetLogLevel(clog.LevelDebug)
@@ -53,7 +52,6 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	if silent {
 		clog.SetLogLevel(clog.LevelWarning)
 	}
-	// \ TODO(4): Move to rootCmd
 
 	clog.Debugf("Starting module::%s", cmd.Use)
 

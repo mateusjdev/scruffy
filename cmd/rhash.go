@@ -24,15 +24,6 @@ func init() {
 	// TODO(3): Work on dry-run flag
 	rhashCmd.Flags().BoolP("dry-run", "d", false, "Doesn't rename or delete files'")
 
-	// TODO(4): Move to rootCmd
-	rhashCmd.Flags().BoolP("debug", "D", false, "Print debug logs")
-	// INFO: Sets LogLevel to Warning
-	rhashCmd.Flags().BoolP("silent", "s", false, "SHHHHHHH! Doesn't print to stdout (runs way faster!)")
-	// \ TODO(4): Move to rootCmd
-
-	// TODO(5): Work on verbose flag
-	rhashCmd.Flags().BoolP("verbose", "v", false, "Show full path")
-
 	// TODO(6): Work on uppercase flag
 	rhashCmd.Flags().BoolP("uppercase", "U", false, "Convert characters to UPPERCASE when possible")
 
@@ -44,10 +35,6 @@ func init() {
 
 	// INFO: Max value is 256(uint8)
 	rhashCmd.Flags().Uint8P("truncate", "t", 32, "Truncate filename")
-
-	// TODO(9): Check need of setting log level via flags (Ex: --log INFO, DEBUG, WARNING, ...)
-	rhashCmd.MarkFlagsMutuallyExclusive("debug", "silent")
-	rhashCmd.MarkFlagsMutuallyExclusive("verbose", "silent")
 
 	// TODO(10): Recreate folder structure on destination Dir
 	// For now --recursive and --output will be mutually exclusive

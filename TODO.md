@@ -6,7 +6,7 @@
 - [ ] TODO(1a): Use XDG Base Directory Specification
 - [ ] TODO(2) Add multiple inputs (Ex: --input $1 -i $2 -i $3)
 - [ ] TODO(3): Work on dry-run flag
-- [ ] TODO(4): Move to rootCmd
+- [X] TODO(4): Move some flags to rootCmd
 - [ ] TODO(5): Work on verbose flag
 - [X] TODO(6): Work on uppercase flag
 - [ ] TODO(7): Work on recursive flag
