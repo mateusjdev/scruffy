@@ -10,7 +10,16 @@ import (
 )
 
 const (
-	MIN_TRUNCATE = 4
+	ARGS_MIN_TRUNCATE = 4
+
+	HashAlgorithmBlake2b string = "blake2b"
+	HashAlgorithmBlake3  string = "blake3"
+	HashAlgorithmMD5     string = "md5"
+	HashAlgorithmSHA1    string = "sha1"
+	HashAlgorithmSHA256  string = "sha256"
+	HashAlgorithmSHA512  string = "sha512"
+
+	HashAlgorithmFuzzy string = "fuzzy"
 )
 
 func RenameFilesToHash(cmd *cobra.Command, args []string) {
@@ -61,7 +70,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	outputPath: %s
 	hash: %s`, dryRun, silent, recursive, verbose, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
 
-	if truncate < MIN_TRUNCATE {
+	if truncate < ARGS_MIN_TRUNCATE {
 		clog.Errorf("--truncate is very low, chosse >= 4 ")
 		clog.ExitBecause(clog.ErrUserGeneric)
 	}
