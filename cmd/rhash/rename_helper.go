@@ -22,7 +22,10 @@ func workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.Custom
 
 	// TODO(16): Check if has permission to move to destination
 	err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
-	if errors.Is(err, cfs.ErrSameFile) {
+	if err == nil {
+		clog.InfoIconf(clog.PrintIconSuccess, "\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+		return nil
+	} else if errors.Is(err, cfs.ErrSameFile) {
 		clog.InfoIconf(clog.PrintIconNothing, "file %s already hashed", sourceFileInfo.GetPath())
 		return nil
 	} else if !errors.Is(err, cfs.ErrFileExists) {
@@ -35,7 +38,10 @@ func workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.Custom
 		destination := filepath.Join(destinationDirInfo.GetPath(), newFileName)
 
 		err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
-		if errors.Is(err, cfs.ErrSameFile) {
+		if err == nil {
+			clog.InfoIconf(clog.PrintIconSuccess, "\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+			return nil
+		} else if errors.Is(err, cfs.ErrSameFile) {
 			clog.InfoIconf(clog.PrintIconNothing, "file %s already hashed", sourceFileInfo.GetPath())
 			return nil
 		} else if !errors.Is(err, cfs.ErrFileExists) {
