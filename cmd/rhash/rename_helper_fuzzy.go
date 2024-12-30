@@ -22,6 +22,7 @@ var (
 type FuzzyMachineOptions struct {
 	uppercase bool
 	truncate  uint8
+	dryRun    bool
 }
 
 func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum() string {
@@ -44,6 +45,15 @@ func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.Cus
 	for {
 		fileHash := fuzzyMachineOptions.getChecksum()
 		destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
+
+		if fuzzyMachineOptions.dryRun {
+			if sourceFileInfo.GetPath() == destination {
+				clog.Infof("file %s already hashed", sourceFileInfo.GetPath())
+			} else {
+				clog.Infof("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+			}
+			return nil
+		}
 
 		// TODO(16): Check if has permission to move to destination
 		err := cfs.SafeRename(sourceFileInfo.GetPath(), destination)

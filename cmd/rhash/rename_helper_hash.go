@@ -20,6 +20,7 @@ import (
 type HashMachineOptions struct {
 	uppercase bool
 	truncate  uint8
+	dryRun    bool
 }
 
 type HashMachine struct {
@@ -88,10 +89,16 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 	clog.Debugf("Working on file \"%s\"", sourceFileInfo.GetPath())
 
 	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
+
 	clog.CheckIfError(err)
 
 	extension := filepath.Ext(sourceFileInfo.GetPath())
 	destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
+
+	if hashMachine.Options.dryRun {
+		clog.Infof("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+		return nil
+	}
 
 	// TODO(16): Check if has permission to move to destination
 	err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)

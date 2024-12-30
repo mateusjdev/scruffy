@@ -21,10 +21,8 @@ func init() {
 	// INFO: If --output/defaultOutputPath is not declared, it will be the same as --input/defaultInputPath
 	rhashCmd.Flags().StringP("output", "o", "", "Location were hashed files will be stored")
 
-	// TODO(3): Work on dry-run flag
 	rhashCmd.Flags().BoolP("dry-run", "d", false, "Doesn't rename or delete files'")
 
-	// TODO(6): Work on uppercase flag
 	rhashCmd.Flags().BoolP("uppercase", "U", false, "Convert characters to UPPERCASE when possible")
 
 	// TODO(7): Work on recursive flag
