@@ -86,9 +86,6 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		clog.ExitBecause(clog.ErrUserGeneric)
 	}
 
-	inputPathAbs, err := filepath.Abs(inputPath)
-	clog.CheckIfError(err)
-
 	if outputPath == "" {
 		if cmd.Flags().Lookup("output").Changed {
 			clog.Errorf("--output is empty or invalid")
@@ -96,9 +93,9 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		}
 
 		if inputPathInfo.GetPathType() == cfs.PathIsFile {
-			outputPath = filepath.Dir(inputPathAbs)
+			outputPath = filepath.Dir(inputPathInfo.GetPath())
 		} else {
-			outputPath = inputPathAbs
+			outputPath = inputPathInfo.GetPath()
 		}
 	}
 
@@ -110,27 +107,24 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		clog.ExitBecause(clog.ErrUserGeneric)
 	}
 
-	outputPathAbs, err := filepath.Abs(outputPath)
-	clog.CheckIfError(err)
-
-	if cfs.IsGitRepo(inputPathAbs) {
+	if cfs.IsGitRepo(inputPathInfo.GetPath()) {
 		if !skipGitCheck {
-			clog.Errorf("%s is in a git repo", inputPathAbs)
+			clog.Errorf("%s is in a git repo", inputPathInfo.GetPath())
 			clog.ExitBecause(clog.ErrUserGeneric)
 		}
-		clog.Infof("%s is in a git repo", inputPathAbs)
+		clog.Infof("%s is in a git repo", inputPathInfo.GetPath())
 	}
 
-	if inputPathAbs != outputPathAbs && cfs.IsGitRepo(outputPathAbs) {
+	if inputPathInfo.GetPath() != outputPathInfo.GetPath() && cfs.IsGitRepo(outputPathInfo.GetPath()) {
 		if !skipGitCheck {
-			clog.Errorf("%s is in a git repo", outputPathAbs)
+			clog.Errorf("%s is in a git repo", outputPathInfo.GetPath())
 			clog.ExitBecause(clog.ErrUserGeneric)
 		}
-		clog.Infof("%s is in a git repo", outputPathAbs)
+		clog.Infof("%s is in a git repo", outputPathInfo.GetPath())
 	}
 
-	clog.Debugf("inputPathAbs: %s", inputPathAbs)
-	clog.Debugf("outputPathAbs: %s", outputPathAbs)
+	clog.Debugf("inputPathInfo.GetPath(): %s", inputPathInfo.GetPath())
+	clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.GetPath())
 
 	// FUZZY_MACHINE
 
