@@ -9,39 +9,49 @@ import (
 func init() {
 	rootCmd.AddCommand(rhashCmd)
 
-	// TODO: add viper and XDG
+	// TODO(1): Add https://github.com/spf13/viper for configuration
+	// TODO(1a): Use XDG Base Directory Specification
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scruffy.yaml)")
-
-	// defaultHash := rename.BLAKE3
-	// rootCmd.Flags().VarP(&defaultHash, "hash", "H", "hash that will be used: [md5/blake3/blake2b/sha1/sha256/sha512/fuzzy]")
 
 	rhashCmd.Flags().StringP("hash", "H", "blake3", "hash that will be used: [md5/blake3/blake2b/sha1/sha256/sha512/fuzzy]")
 
-	// TODO add multiple inputs: -i $1 -i $2 -i $3
-	defaultInputPath := "./"
-	rhashCmd.Flags().StringP("input", "i", defaultInputPath, "Files that will be hashed")
+	// TODO(2) Add multiple inputs (Ex: --input $1 -i $2 -i $3)
+	rhashCmd.Flags().StringP("input", "i", "./", "Files that will be hashed")
 
-	// if not declared --output/defaultOutputPath will be the same as --input/defaultInputPath
-	defaultOutputPath := ""
-	rhashCmd.Flags().StringP("output", "o", defaultOutputPath, "Location were hashed files will be stored")
+	// INFO: If --output/defaultOutputPath is not declared, it will be the same as --input/defaultInputPath
+	rhashCmd.Flags().StringP("output", "o", "", "Location were hashed files will be stored")
 
+	// TODO(3): Work on dry-run flag
 	rhashCmd.Flags().BoolP("dry-run", "d", false, "Doesn't rename or delete files'")
-	// TODO: Imply --force
+
+	// TODO(4): Move to rootCmd
 	rhashCmd.Flags().BoolP("debug", "D", false, "Print debug logs")
+	// INFO: Sets LogLevel to Warning
 	rhashCmd.Flags().BoolP("silent", "s", false, "SHHHHHHH! Doesn't print to stdout (runs way faster!)")
-	rhashCmd.Flags().BoolP("uppercase", "u", false, "Convert characters to UPPERCASE when possible")
-	rhashCmd.Flags().BoolP("recursive", "r", false, "Recurse DIRs, when enabled, will not accept output folder")
-	rhashCmd.Flags().BoolP("force", "F", false, "Ignore git checks")
+	// \ TODO(4): Move to rootCmd
+
+	// TODO(5): Work on verbose flag
 	rhashCmd.Flags().BoolP("verbose", "v", false, "Show full path")
 
-	rhashCmd.Flags().Int8P("lenght", "l", 16, "Truncate filename")
-	// rhashCmd.Flags().Int8P("lenght", "l", 16, "Lenght used in filename for blake3 and fuzzy algorithms")
+	// TODO(6): Work on uppercase flag
+	rhashCmd.Flags().BoolP("uppercase", "u", false, "Convert characters to UPPERCASE when possible")
 
-	// TODO: -v INFO, DEBUG, WARNING, ...
+	// TODO(7): Work on recursive flag
+	rhashCmd.Flags().BoolP("recursive", "r", false, "Recurse DIRs, when enabled, will not accept output folder")
+
+	// INFO: Ignore git checks, maybe will do something more later
+	rhashCmd.Flags().BoolP("force", "F", false, "Ignore git checks")
+
+	// TODO(8): Work on lenght/truncate flag
+	// Lenght used in filename for blake3 and fuzzy algorithms
+	rhashCmd.Flags().Int8P("lenght", "l", 16, "Truncate filename")
+
+	// TODO(9): Check need of setting log level via flags (Ex: --log INFO, DEBUG, WARNING, ...)
 	rhashCmd.MarkFlagsMutuallyExclusive("debug", "silent")
 	rhashCmd.MarkFlagsMutuallyExclusive("verbose", "silent")
 
-	// For now recursive and output will be exclusive
+	// TODO(10): Recreate folder structure on destination Dir
+	// For now --recursive and --output will be mutually exclusive
 	rhashCmd.MarkFlagsMutuallyExclusive("recursive", "output")
 	rhashCmd.MarkFlagFilename("input")
 	rhashCmd.MarkFlagDirname("output")

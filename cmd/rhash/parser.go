@@ -3,7 +3,6 @@ package rhash
 import (
 	"errors"
 	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/common"
 	"os"
 	"path/filepath"
 
@@ -34,6 +33,7 @@ func isValidPath(path string) (PathType, error) {
 	return PathIsFile, nil
 }
 
+// TODO(12): Check if go-git need git binary, if yes, drop module
 func isGitRepo(path string) bool {
 	_, err := git.PlainOpenWithOptions(path, &git.PlainOpenOptions{DetectDotGit: true})
 	if err != nil && err == git.ErrRepositoryNotExists {
@@ -44,10 +44,7 @@ func isGitRepo(path string) bool {
 
 func RenameFilesToHash(cmd *cobra.Command, args []string) {
 
-	// move to rootArgs
-
-	// Move to rootArgs
-	// clog.Debugf("Starting %s", filepath.Base(os.Args[0]))
+	// TODO(4): Move to rootCmd
 	debug, _ := cmd.Flags().GetBool("debug")
 	if debug {
 		clog.SetLogLevel(clog.LevelDebug)
@@ -56,53 +53,65 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	if silent {
 		clog.SetLogLevel(clog.LevelWarning)
 	}
+	// \ TODO(4): Move to rootCmd
 
 	clog.Debugf("Starting module::%s", cmd.Use)
 
+	// TODO(3): Work on dry-run flag
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
-	recursive, _ := cmd.Flags().GetBool("recursive")
+
+	// TODO(5): Work on verbose flag
 	verbose, _ := cmd.Flags().GetBool("verbose")
-	mForce, _ := cmd.Flags().GetBool("force")
-	force := mForce || debug
+
+	// TODO(6): Work on uppercase flag
 	uppercase, _ := cmd.Flags().GetBool("uppercase")
-	// TODO: Check MAX_PATH on windows
+
+	// TODO(7): Work on recursive flag
+	recursive, _ := cmd.Flags().GetBool("recursive")
+
+	skipGitCheck, _ := cmd.Flags().GetBool("force")
+	skipGitCheck = skipGitCheck || debug || dryRun
+
+	// TODO(8): Work on lenght flag
+	// TODO(8a): Check MAX_PATH on windows
 	lenght, _ := cmd.Flags().GetInt8("lenght")
+
 	inputPath, _ := cmd.Flags().GetString("input")
 	outputPath, _ := cmd.Flags().GetString("output")
+
 	hash, _ := cmd.Flags().GetString("hash")
-	// hash := cmd.Flags().Lookup("hash")
 
 	clog.Debugf(`Args:
 	dry-run: %t
 	silent: %t
 	recursive: %t
 	verbose: %t
-	force: %t
+	skipGitCheck: %t
 	uppercase: %t
 	lenght: %d
 	inputPath: %s
 	outputPath: %s
-	hash: %s`, dryRun, silent, recursive, verbose, force, uppercase, lenght, inputPath, outputPath, hash)
+	hash: %s`, dryRun, silent, recursive, verbose, skipGitCheck, uppercase, lenght, inputPath, outputPath, hash)
 
 	if inputPath == "" {
 		clog.Errorf("--input is empty or invalid")
-		clog.ExitBecause(clog.USER_ERROR)
+		clog.ExitBecause(clog.ErrUserGeneric)
 	}
 
 	inputPathType, err := isValidPath(inputPath)
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
 	if inputPathType == PathIsNonExistent {
 		clog.Errorf("Source path %s is not a valid file or a directory\n", inputPath)
-		clog.ExitBecause(clog.USER_ERROR)
+		clog.ExitBecause(clog.ErrUserGeneric)
 	}
 
 	inputPathAbs, err := filepath.Abs(inputPath)
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
 
 	if outputPath == "" {
 		if cmd.Flags().Lookup("output").Changed {
 			clog.Errorf("--output is empty or invalid")
-			clog.ExitBecause(clog.USER_ERROR)
+			clog.ExitBecause(clog.ErrUserGeneric)
 		}
 
 		if inputPathType == PathIsFile {
@@ -112,29 +121,29 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// TODO: create outputPath if doesnt exist
+	// TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
 	outputPathType, err := isValidPath(outputPath)
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
 	if outputPathType != PathIsDirectory {
 		clog.Errorf("Destination folder \"%s\" is not a valid directory\n", outputPath)
-		clog.ExitBecause(clog.USER_ERROR)
+		clog.ExitBecause(clog.ErrUserGeneric)
 	}
 
 	outputPathAbs, err := filepath.Abs(outputPath)
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
 
 	if isGitRepo(inputPathAbs) {
-		if !force && !dryRun {
+		if !skipGitCheck {
 			clog.Errorf("%s is in a git repo", inputPathAbs)
-			clog.ExitBecause(clog.USER_ERROR)
+			clog.ExitBecause(clog.ErrUserGeneric)
 		}
 		clog.Infof("%s is in a git repo", inputPathAbs)
 	}
 
 	if isGitRepo(outputPathAbs) {
-		if !force && !dryRun && inputPathAbs != outputPathAbs {
+		if !skipGitCheck && inputPathAbs != outputPathAbs {
 			clog.Errorf("%s is in a git repo", outputPathAbs)
-			clog.ExitBecause(clog.USER_ERROR)
+			clog.ExitBecause(clog.ErrUserGeneric)
 		}
 		clog.Infof("%s is in a git repo", outputPathAbs)
 	}
@@ -149,10 +158,12 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		clog.Errorf("%s: (%s)", err, hash)
 	}
 
+	// TODO(13): Create a HashMachine interface, add Options
+	// Options: {algorithm, lenght/truncate, uppercase, ...}
 	clog.Debugf("Creating HashMachine with algorithm ID: (%d)", int(algorithm))
 
 	hashMachine, err := getHashMachine(algorithm, int(lenght))
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
 
 	// PATH_WALK
 

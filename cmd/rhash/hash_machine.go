@@ -6,7 +6,7 @@ import (
 	"errors"
 	"hash"
 	"io"
-	"mateusjdev/scruffy/cmd/common"
+	"mateusjdev/scruffy/cmd/clog"
 	"os"
 
 	"lukechampine.com/blake3"
@@ -27,8 +27,10 @@ const (
 	HashFuzzy
 )
 
+// TODO(18): Merge checkHash and getHashMachine?
+// checkHash makes a fast check if Hash is valid, getHashMachine create the HashMachine
+// benchmark time taken by both
 func checkHash(hash string) (HashAlgorithm, error) {
-	// TODO: improve? map?
 	switch hash {
 	case "sha512":
 		return HashSHA512, nil
@@ -49,75 +51,52 @@ func checkHash(hash string) (HashAlgorithm, error) {
 	}
 }
 
-// TODO: add lenght
-func createHasherBlake2b() (hash.Hash, error) {
-	return crypto.BLAKE2b_256.New(), nil
-}
-func createHasherBlake3(lenght int) (hash.Hash, error) {
-	// lenght: length_1:1
-	return blake3.New(lenght, nil), nil
-}
+// TODO(8): Work on lenght/truncate flag
+// Chosse between "--hash SHA224 ..." or "--hash SHA2 --lenght 224"
 
-// TODO: fuzzy hash
-func createHasherFuzzy(_ int) (hash.Hash, error) {
-	// TODO: length
-	panic("Not implemented")
-}
-func createHasherMD5() (hash.Hash, error) {
-	// lenght: fixed_128_bits
-	return crypto.MD5.New(), nil
-}
-func createHasherSHA1() (hash.Hash, error) {
-	// lenght: fixed_160_bits
-	return crypto.SHA1.New(), nil
-}
-
-// TODO: chosse between "--hash SHA224,256, ..." or "--hash SHA2 --lenght 512"
-func createHasherSHA256() (hash.Hash, error) {
-	// lenght: fixed_256_bits
-	return crypto.SHA256.New(), nil
-}
-func createHasherSHA512() (hash.Hash, error) {
-	// lenght: fixed_512_bits
-	return crypto.SHA512.New(), nil
-}
-
-// TODO: Create interface hashMachine (hash.Hash, Uppercase)
+// TODO(13): Create a HashMachine interface, add Options
+// Options: {algorithm, lenght/truncate, uppercase, ...}
 func getHashMachine(algorithm HashAlgorithm, lenght int) (hash.Hash, error) {
 	switch algorithm {
 	case HashBlake2b:
-		return createHasherBlake2b()
+		// lenght: fixed_256_bits (256, 384, 512)
+		return crypto.BLAKE2b_256.New(), nil
 	case HashBlake3:
-		return createHasherBlake3(lenght)
+		return blake3.New(lenght, nil), nil
 	case HashFuzzy:
-		return createHasherFuzzy(lenght)
+		panic("Not implemented")
 	case HashMD5:
-		return createHasherMD5()
+		// lenght: fixed_128_bits
+		return crypto.MD5.New(), nil
 	case HashSHA1:
-		return createHasherSHA1()
+		// lenght: fixed_160_bits
+		return crypto.SHA1.New(), nil
 	case HashSHA256:
-		return createHasherSHA256()
+		// lenght: fixed_256_bits
+		return crypto.SHA256.New(), nil
 	case HashSHA512:
-		return createHasherSHA512()
+		// lenght: fixed_512_bits
+		return crypto.SHA512.New(), nil
 	}
 	return nil, errors.New("unable to create a hasher")
 }
 
 func hashFile(fileInfo CustomFileInfo, hasher hash.Hash) (string, error) {
-	// TODO: benchmark reuse
-	hasher.Reset()
-
 	if fileInfo.PathType != PathIsFile {
 		return "", errors.New("trying to hash a non file")
 	}
 
 	file, err := os.Open(fileInfo.Path)
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
 	defer file.Close()
 	if _, err := io.Copy(hasher, file); err != nil {
 		return "", err
 	}
 	hashInBytes := hasher.Sum(nil)
 	hashString := hex.EncodeToString(hashInBytes)
+
+	// TODO(17): Benchark reuse(.Reset()) vs recreate
+	hasher.Reset()
+
 	return hashString, nil
 }

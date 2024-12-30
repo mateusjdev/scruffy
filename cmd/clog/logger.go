@@ -20,13 +20,6 @@ const (
 
 type StringIcon string
 
-type exitReason uint8
-
-const (
-	CODE_ERROR exitReason = iota + 1
-	USER_ERROR
-)
-
 const (
 	printDebug       StringIcon = "\x1b[30;47m DEBUG \x1b[0m "
 	printInfo        StringIcon = "\x1b[30;44m INFO \x1b[0m "
@@ -37,15 +30,8 @@ const (
 	PrintIconError   StringIcon = "\x1b[37;41m ❌ \x1b[0m "
 )
 
-func ExitBecause(reason exitReason) {
-	os.Exit(int(reason))
-}
-
+// Ensure space between logs:
 // Dumb, but if works, it works
-// Ensure space between logs, may change to single newline later:
-// [DEBUG] Debug information
-//
-// [INFO] Information
 func ensureNewLine(msg *string) {
 	if strings.HasSuffix(*msg, "\n") {
 		return

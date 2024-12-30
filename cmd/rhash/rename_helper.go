@@ -6,7 +6,6 @@ import (
 	"hash"
 	"io/fs"
 	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/common"
 	"os"
 	"path/filepath"
 )
@@ -22,7 +21,7 @@ type CustomFutureFileInfo struct {
 	Extension      string
 }
 
-// TODO: Check for destination permissions, if not granted, this will report ok for creating a new file
+// TODO(16): Check if has permission to move to destination
 func checkIfExists(path string) (bool, error) {
 	if _, err := os.Stat(path); err == nil {
 		return true, nil
@@ -39,7 +38,8 @@ func safeRename(source string, destination string) bool {
 		return true
 	}
 
-	exist, _ := checkIfExists(destination)
+	exist, err := checkIfExists(destination)
+	clog.CheckIfError(err)
 	if !exist {
 		os.Rename(source, destination)
 		clog.InfoIconf(clog.PrintIconSuccess, "\"%s\" -> %s", source, destination)
@@ -51,12 +51,16 @@ func safeRename(source string, destination string) bool {
 
 func workOnFile(sourceFileInfo CustomFileInfo, destinationDirInfo CustomFileInfo, hashMachine hash.Hash) error {
 	clog.Debugf("Working on file \"%s\"", sourceFileInfo.Path)
+
+	// Get new filename (Hash)
+	// TODO(15): Add --hash fuzzy
 	fileHash, err := hashFile(sourceFileInfo, hashMachine)
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
+
 	extension := filepath.Ext(sourceFileInfo.Path)
 	destination := filepath.Join(destinationDirInfo.Path, fileHash+extension)
 
-	// Check if has permission to move
+	// TODO(16): Check if has permission to move to destination
 	if safeRename(sourceFileInfo.Path, destination) {
 		return nil
 	}
@@ -75,26 +79,30 @@ func workOnFile(sourceFileInfo CustomFileInfo, destinationDirInfo CustomFileInfo
 
 func IsDir(path string) bool {
 	stat, err := os.Stat(path)
-	common.CheckIfError(err)
+	clog.CheckIfError(err)
 	return stat.IsDir()
 }
 
-// TODO: Verificar a necessidade de validar os caminhos
-// func enqueuePath(inputPathAbs string, outputPathAbs string, hashMachine hash.Hash) error {
+// TODO(14): Check need of path validation or continue to use CustomFileInfo
 func enqueuePath(inputPathInfo CustomFileInfo, outputPathInfo CustomFileInfo, hashMachine hash.Hash) error {
+	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path)
 
 	if inputPathInfo.PathType == PathIsFile {
-		clog.Debugf("Working on file \"%s\"", inputPathInfo.Path)
 		return workOnFile(inputPathInfo, outputPathInfo, hashMachine)
 	}
 
+	if inputPathInfo.PathType != PathIsDirectory {
+		clog.Errorf("Not a valid file or directory")
+		clog.ExitBecause(clog.ErrCodeGeneric)
+	}
+
 	filepath.WalkDir(inputPathInfo.Path, func(path string, di fs.DirEntry, err error) error {
-		clog.Debugf("Walking on %s", path)
 		if err != nil {
 			return err
 		}
 
-		// TODO: recurse into directories
+		// TODO(7): Work on recursive flag
+		// Recurse into directories
 		if di.IsDir() {
 			if inputPathInfo.Path == path {
 				return nil
