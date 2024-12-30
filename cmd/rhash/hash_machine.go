@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hash"
 	"io"
+	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
 	"os"
 	"strings"
@@ -53,12 +54,12 @@ func getHashAlgorithm(hash string, lenght int) (hash.Hash, error) {
 	return nil, errors.New("hash method not valid")
 }
 
-func (hashMachine HashMachine) getChecksum(fileInfo CustomFileInfo) (string, error) {
-	if fileInfo.PathType != PathIsFile {
+func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string, error) {
+	if fileInfo.GetPathType() != cfs.PathIsFile {
 		return "", errors.New("trying to hash a non file")
 	}
 
-	file, err := os.Open(fileInfo.Path)
+	file, err := os.Open(fileInfo.GetPath())
 	clog.CheckIfError(err)
 	defer file.Close()
 	if _, err := io.Copy(hashMachine.Machine, file); err != nil {

@@ -1,46 +1,12 @@
 package rhash
 
 import (
-	"errors"
+	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
-	"os"
 	"path/filepath"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
 )
-
-type PathType uint8
-
-const (
-	PathIsUnknown PathType = iota
-	PathIsNonExistent
-	PathIsFile
-	PathIsDirectory
-)
-
-func isValidPath(path string) (PathType, error) {
-	stat, err := os.Stat(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return PathIsNonExistent, nil
-		}
-		return PathIsUnknown, err
-	}
-	if stat.IsDir() {
-		return PathIsDirectory, nil
-	}
-	return PathIsFile, nil
-}
-
-// Using go-git because it doesn't require git binary
-func isGitRepo(path string) bool {
-	_, err := git.PlainOpenWithOptions(path, &git.PlainOpenOptions{DetectDotGit: true})
-	if err != nil && err == git.ErrRepositoryNotExists {
-		return false
-	}
-	return true
-}
 
 func RenameFilesToHash(cmd *cobra.Command, args []string) {
 
@@ -94,9 +60,9 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		clog.ExitBecause(clog.ErrUserGeneric)
 	}
 
-	inputPathType, err := isValidPath(inputPath)
+	inputPathInfo, err := cfs.GetValidatedPath(inputPath)
 	clog.CheckIfError(err)
-	if inputPathType == PathIsNonExistent {
+	if inputPathInfo.GetPathType() == cfs.PathIsNonExistent {
 		clog.Errorf("Source path %s is not a valid file or a directory\n", inputPath)
 		clog.ExitBecause(clog.ErrUserGeneric)
 	}
@@ -110,7 +76,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 			clog.ExitBecause(clog.ErrUserGeneric)
 		}
 
-		if inputPathType == PathIsFile {
+		if inputPathInfo.GetPathType() == cfs.PathIsFile {
 			outputPath = filepath.Dir(inputPathAbs)
 		} else {
 			outputPath = inputPathAbs
@@ -118,9 +84,9 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	}
 
 	// TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
-	outputPathType, err := isValidPath(outputPath)
+	outputPathInfo, err := cfs.GetValidatedPath(outputPath)
 	clog.CheckIfError(err)
-	if outputPathType != PathIsDirectory {
+	if outputPathInfo.GetPathType() != cfs.PathIsDirectory {
 		clog.Errorf("Destination folder \"%s\" is not a valid directory\n", outputPath)
 		clog.ExitBecause(clog.ErrUserGeneric)
 	}
@@ -128,7 +94,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	outputPathAbs, err := filepath.Abs(outputPath)
 	clog.CheckIfError(err)
 
-	if isGitRepo(inputPathAbs) {
+	if cfs.IsGitRepo(inputPathAbs) {
 		if !skipGitCheck {
 			clog.Errorf("%s is in a git repo", inputPathAbs)
 			clog.ExitBecause(clog.ErrUserGeneric)
@@ -136,7 +102,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		clog.Infof("%s is in a git repo", inputPathAbs)
 	}
 
-	if isGitRepo(outputPathAbs) {
+	if cfs.IsGitRepo(outputPathAbs) {
 		if !skipGitCheck && inputPathAbs != outputPathAbs {
 			clog.Errorf("%s is in a git repo", outputPathAbs)
 			clog.ExitBecause(clog.ErrUserGeneric)
@@ -160,9 +126,6 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	}
 
 	// PATH_WALK
-
-	inputPathInfo := CustomFileInfo{inputPathAbs, inputPathType}
-	outputPathInfo := CustomFileInfo{outputPathAbs, outputPathType}
 
 	enqueuePath(inputPathInfo, outputPathInfo, hashMachine)
 }

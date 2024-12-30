@@ -23,3 +23,6 @@
 - [ ] TODO(17): Benchark reuse(.Reset()) vs recreate
 - [X] TODO(18): Merge checkHash and getHashMachine?
 - [ ] TODO(19): Makefile; -ldflags "-s -w"
+- [X] TODO(20): Move fs related to mateusjdev/cmd/filesystem
+- [ ] TODO(21): Check WalkDir error/return
+- [X] TODO(22): Make CustomFileInfo private and create through ValidatePath()
