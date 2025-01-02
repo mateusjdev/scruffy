@@ -132,11 +132,13 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		fuzzyMachineOptions := FuzzyMachineOptions{
 			uppercase: uppercase,
 			truncate:  truncate,
-			// INFO: For file naming this will be random,
-			// but at least will show the destination path
-			dryRun: dryRun,
+			// INFO: For file naming this (dryRun) will be random,
+			// but at least it will show the destination path
+			dryRun:  dryRun,
 		}
-		fuzzyMachineOptions.enqueuePath(inputPathInfo, outputPathInfo)
+
+		// PATH_WALK
+		EnqueuePath(fuzzyMachineOptions, inputPathInfo, outputPathInfo)
 	} else {
 		// HASH_MACHINE
 
@@ -152,6 +154,6 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 		}
 
 		// PATH_WALK
-		hashMachine.enqueuePath(inputPathInfo, outputPathInfo)
+EnqueuePath(hashMachine, inputPathInfo, outputPathInfo)
 	}
 }

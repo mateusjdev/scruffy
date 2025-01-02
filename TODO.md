@@ -26,4 +26,5 @@
 - [X] TODO(20): Move fs related to mateusjdev/cmd/filesystem
 - [ ] TODO(21): Check WalkDir error/return
 - [X] TODO(22): Make CustomFileInfo private and create through ValidatePath()
-- [ ] TODO(23): Reuse enqueuePath for rename_helper_fuzzy and rename_helper_hash
+- [X] TODO(23): Reuse enqueuePath for rename_helper_fuzzy and rename_helper_hash
+- [ ] TODO(24): Test simlinks, shorcuts, ...

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/fs"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
 	"os"
@@ -17,11 +16,7 @@ import (
 	"lukechampine.com/blake3"
 )
 
-type HashMachineOptions struct {
-	uppercase bool
-	truncate  uint8
-	dryRun    bool
-}
+type HashMachineOptions MachineOptions
 
 type HashMachine struct {
 	Machine hash.Hash
@@ -130,39 +125,4 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 
 		counter++
 	}
-}
-
-// TODO(14): Check need of path validation or continue to use CustomFileInfo
-func (hashMachine HashMachine) enqueuePath(inputPathInfo cfs.CustomFileInfo, outputPathInfo cfs.CustomFileInfo) error {
-	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.GetPath())
-
-	if inputPathInfo.GetPathType() == cfs.PathIsFile {
-		return hashMachine.workOnFile(inputPathInfo, outputPathInfo)
-	}
-
-	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
-		clog.Errorf("Not a valid file or directory")
-		clog.ExitBecause(clog.ErrCodeGeneric)
-	}
-
-	// TODO(21): Check WalkDir error/return
-	filepath.WalkDir(inputPathInfo.GetPath(), func(path string, di fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// TODO(7): Work on recursive flag
-		// Recurse into directories
-		if di.IsDir() {
-			if inputPathInfo.GetPath() == path {
-				return nil
-			}
-			return filepath.SkipDir
-		}
-
-		fileInfo := cfs.GetUnvalidatedPath(path, cfs.PathIsFile)
-		return hashMachine.workOnFile(fileInfo, outputPathInfo)
-	})
-
-	return nil
 }

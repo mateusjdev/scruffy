@@ -2,7 +2,6 @@ package rhash
 
 import (
 	"errors"
-	"io/fs"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
 	"math/rand"
@@ -19,21 +18,17 @@ var (
 	seed *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 
-type FuzzyMachineOptions struct {
-	uppercase bool
-	truncate  uint8
-	dryRun    bool
-}
+type FuzzyMachineOptions MachineOptions
 
-func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum() string {
+func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ cfs.CustomFileInfo) (string, error) {
 	b := make([]byte, fuzzyMachineOptions.truncate)
 	for i := range b {
 		b[i] = charset[seed.Intn(len(charset))]
 	}
 	if fuzzyMachineOptions.uppercase {
-		return strings.ToUpper(string(b))
+		return strings.ToUpper(string(b)), nil
 	}
-	return string(b)
+	return string(b), nil
 }
 
 func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo) error {
@@ -43,7 +38,7 @@ func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.Cus
 
 	// If fails to rename, just generate a new name
 	for {
-		fileHash := fuzzyMachineOptions.getChecksum()
+		fileHash, _ := fuzzyMachineOptions.getChecksum(sourceFileInfo)
 		destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
 
 		if fuzzyMachineOptions.dryRun {
@@ -66,41 +61,4 @@ func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.Cus
 
 		return err
 	}
-}
-
-// TODO(14): Check need of path validation or continue to use CustomFileInfo
-// TODO(23): Reuse enqueuePath for rename_helper_fuzzy and rename_helper_hash
-func (fuzzyMachineOptions FuzzyMachineOptions) enqueuePath(inputPathInfo cfs.CustomFileInfo, outputPathInfo cfs.CustomFileInfo) error {
-	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.GetPath())
-
-	if inputPathInfo.GetPathType() == cfs.PathIsFile {
-		return fuzzyMachineOptions.workOnFile(inputPathInfo, outputPathInfo)
-	}
-
-	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
-		clog.Errorf("Not a valid file or directory")
-		clog.ExitBecause(clog.ErrCodeGeneric)
-	}
-
-	// TODO(21): Check WalkDir error/return
-	filepath.WalkDir(inputPathInfo.GetPath(), func(path string, di fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// TODO(7): Work on recursive flag
-		// Recurse into directories
-
-		if di.IsDir() {
-			if inputPathInfo.GetPath() == path {
-				return nil
-			}
-			return filepath.SkipDir
-		}
-
-		fileInfo := cfs.GetUnvalidatedPath(path, cfs.PathIsFile)
-		return fuzzyMachineOptions.workOnFile(fileInfo, outputPathInfo)
-	})
-
-	return nil
 }
