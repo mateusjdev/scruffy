@@ -25,7 +25,6 @@ func init() {
 
 	rhashCmd.Flags().BoolP("uppercase", "U", false, "Convert characters to UPPERCASE when possible")
 
-	// TODO(7): Work on recursive flag
 	rhashCmd.Flags().BoolP("recursive", "r", false, "Recurse DIRs, when enabled, will not accept output folder")
 
 	// INFO: Ignore git checks, maybe will do something more later
@@ -36,6 +35,8 @@ func init() {
 
 	// TODO(10): Recreate folder structure on destination Dir
 	// For now --recursive and --output will be mutually exclusive
+	// If --output is declared, rhash will not recurse into --input folders
+	// If --recursive is declared, rhash will not accept another folder as output
 	rhashCmd.MarkFlagsMutuallyExclusive("recursive", "output")
 	rhashCmd.MarkFlagFilename("input")
 	rhashCmd.MarkFlagDirname("output")

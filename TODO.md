@@ -9,7 +9,7 @@
 - [X] TODO(4): Move some flags to rootCmd
 - [X] TODO(5): Work on verbose flag
 - [X] TODO(6): Work on uppercase flag
-- [ ] TODO(7): Work on recursive flag
+- [X] TODO(7): Work on recursive flag
 - [X] TODO(8): Work on lenght/truncate flag
 - [X] TODO(8a): Check MAX_PATH on windows
 - [ ] TODO(9): Check need of setting log level via flags (Ex: --log INFO, DEBUG, WARNING, ...)

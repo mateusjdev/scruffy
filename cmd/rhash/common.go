@@ -18,10 +18,11 @@ const (
 )
 
 type MachineOptions struct {
-	uppercase bool
-	truncate  uint8
-	dryRun    bool
-	verbose   bool
+	uppercase         bool
+	truncate          uint8
+	dryRun            bool
+	verbose           bool
+	relativeDirectory string
 }
 
 type RenameHelper interface {
@@ -33,29 +34,43 @@ type RenameMachine interface {
 	RenameHelper
 }
 
+func isNotSameVolume(path1, path2 string) bool {
+	return filepath.VolumeName(path1) != filepath.VolumeName(path2)
+}
+
 func StripCommonPrefix(path1, path2 string) (string, string) {
+	if isNotSameVolume(path1, path2) {
+		return path1, path2
+	}
+
 	commonPrefix := filepath.Dir(path1)
 	for {
 		if strings.HasPrefix(path2, commonPrefix) {
 			break
 		}
+		clog.Debugf("commonPrefix: %s", commonPrefix)
 		commonPrefix = filepath.Dir(commonPrefix)
 	}
 	commonPrefix = commonPrefix + string(os.PathSeparator)
 	return strings.TrimPrefix(path1, commonPrefix), strings.TrimPrefix(path2, commonPrefix)
 }
 
-func ReportOperation(options MachineOptions, operation Operation, source cfs.CustomFileInfo, destination cfs.CustomFileInfo) {
-	var fSource string
-	var fDestination string
-	if options.verbose {
+func ReportOperation(options MachineOptions, operation Operation, source, destination cfs.CustomFileInfo) {
+	var fSource, fDestination string
+	if options.verbose || isNotSameVolume(fSource, fDestination) {
 		fSource = source.GetPath()
 		fDestination = destination.GetPath()
 	} else {
-		fSource, fDestination = StripCommonPrefix(
+		fSource, _ = StripCommonPrefix(
 			source.GetPath(),
-			destination.GetPath(),
+			options.relativeDirectory,
 		)
+
+		var err error
+		fDestination, err = filepath.Rel(filepath.Dir(source.GetPath()), destination.GetPath())
+		if err != nil {
+			fDestination = destination.GetPath()
+		}
 	}
 
 	switch operation {
@@ -64,12 +79,12 @@ func ReportOperation(options MachineOptions, operation Operation, source cfs.Cus
 	case OperationRenamed:
 		clog.InfoSuccessf("\"%s\" -> %s", fSource, fDestination)
 	case OperationDryRun:
-		clog.Infof("\"%s\" -> %s", fSource, fDestination)
+		clog.Infof("\"%s\" -> \"%s\"", fSource, fDestination)
 	}
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func EnqueuePath(renameMachine RenameMachine, inputPathInfo cfs.CustomFileInfo, outputPathInfo cfs.CustomFileInfo) error {
+func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, outputPathInfo cfs.CustomFileInfo) error {
 
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.GetPath())
 
@@ -89,17 +104,29 @@ func EnqueuePath(renameMachine RenameMachine, inputPathInfo cfs.CustomFileInfo, 
 			return err
 		}
 
-		// TODO(7): Work on recursive flag
-		// Recurse into directories
-
 		if di.IsDir() {
 			if inputPathInfo.GetPath() == path {
 				return nil
 			}
+
+			if recursive {
+				recursePathInfo, err := cfs.GetValidatedPath(path)
+				clog.CheckIfError(err)
+
+				EnqueuePath(
+					renameMachine,
+					recursive,
+					recursePathInfo,
+					recursePathInfo,
+				)
+			}
+
+			// Skip walk(dir) from --recuse anyway, this helps ensure destination folder will be respected
 			return filepath.SkipDir
 		}
 
-		fileInfo := cfs.GetUnvalidatedPath(path, cfs.PathIsFile)
+		fileInfo, err := cfs.GetValidatedPath(path)
+		clog.CheckIfError(err)
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())
 		return renameMachine.workOnFile(fileInfo, outputPathInfo)
