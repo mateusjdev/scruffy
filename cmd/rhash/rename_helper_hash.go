@@ -81,8 +81,6 @@ func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string,
 }
 
 func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo) error {
-	clog.Debugf("Working on file \"%s\"", sourceFileInfo.GetPath())
-
 	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
 
 	clog.CheckIfError(err)
@@ -90,18 +88,44 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 	extension := filepath.Ext(sourceFileInfo.GetPath())
 	destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
 
+	destinationFileInfo := cfs.GetUnvalidatedPath(destination, cfs.PathIsFile)
+
 	if hashMachine.Options.dryRun {
-		clog.Infof("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+		if sourceFileInfo.GetPath() == destination {
+			ReportOperation(
+				MachineOptions(hashMachine.Options),
+				OperationSameFile,
+				sourceFileInfo,
+				destinationFileInfo,
+			)
+		} else {
+			ReportOperation(
+				MachineOptions(hashMachine.Options),
+				OperationDryRun,
+				sourceFileInfo,
+				destinationFileInfo,
+			)
+		}
 		return nil
 	}
 
 	// TODO(16): Check if has permission to move to destination
 	err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
 	if err == nil {
-		clog.InfoSuccessf("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+		ReportOperation(
+			MachineOptions(hashMachine.Options),
+			OperationRenamed,
+			sourceFileInfo,
+			destinationFileInfo,
+		)
 		return nil
 	} else if errors.Is(err, cfs.ErrSameFile) {
-		clog.Infof("file %s already hashed", sourceFileInfo.GetPath())
+		ReportOperation(
+			MachineOptions(hashMachine.Options),
+			OperationSameFile,
+			sourceFileInfo,
+			destinationFileInfo,
+		)
 		return nil
 	} else if !errors.Is(err, cfs.ErrFileExists) {
 		return err
@@ -111,13 +135,25 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 	for {
 		newFileName := fmt.Sprintf("%s_%d%s", fileHash, counter, extension)
 		destination := filepath.Join(destinationDirInfo.GetPath(), newFileName)
+		destinationFileInfo = cfs.GetUnvalidatedPath(destination, cfs.PathIsFile)
 
 		err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
 		if err == nil {
-			clog.InfoSuccessf("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+			ReportOperation(
+				MachineOptions(hashMachine.Options),
+				OperationRenamed,
+				sourceFileInfo,
+				destinationFileInfo,
+			)
+
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) {
-			clog.Infof("file %s already hashed", sourceFileInfo.GetPath())
+			ReportOperation(
+				MachineOptions(hashMachine.Options),
+				OperationSameFile,
+				sourceFileInfo,
+				destinationFileInfo,
+			)
 			return nil
 		} else if !errors.Is(err, cfs.ErrFileExists) {
 			return err

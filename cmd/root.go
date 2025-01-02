@@ -27,7 +27,6 @@ func init() {
 	// INFO: Sets LogLevel to Warning
 	rootCmd.PersistentFlags().BoolP("silent", "s", false, "SHHHHHHH! Doesn't print to stdout (some scripts will run way faster!)")
 
-	// TODO(5): Work on verbose flag
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Show more information about what are being done")
 
 	// TODO(9): Check need of setting log level via flags (Ex: --log INFO, DEBUG, WARNING, ...)

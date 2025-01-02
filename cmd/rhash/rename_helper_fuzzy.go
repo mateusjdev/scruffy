@@ -3,7 +3,6 @@ package rhash
 import (
 	"errors"
 	"mateusjdev/scruffy/cmd/cfs"
-	"mateusjdev/scruffy/cmd/clog"
 	"math/rand"
 	"path/filepath"
 	"strings"
@@ -32,28 +31,39 @@ func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ cfs.CustomFileInfo)
 }
 
 func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo) error {
-	clog.Debugf("Working on file \"%s\"", sourceFileInfo.GetPath())
-
 	extension := filepath.Ext(sourceFileInfo.GetPath())
 
 	// If fails to rename, just generate a new name
+
+	if fuzzyMachineOptions.dryRun {
+		fileHash, _ := fuzzyMachineOptions.getChecksum(sourceFileInfo)
+		destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
+
+		destinationFileInfo := cfs.GetUnvalidatedPath(destination, cfs.PathIsFile)
+
+		ReportOperation(
+			MachineOptions(fuzzyMachineOptions),
+			OperationDryRun,
+			sourceFileInfo,
+			destinationFileInfo,
+		)
+
+		return nil
+	}
+
 	for {
 		fileHash, _ := fuzzyMachineOptions.getChecksum(sourceFileInfo)
 		destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
 
-		if fuzzyMachineOptions.dryRun {
-			if sourceFileInfo.GetPath() == destination {
-				clog.Infof("file %s already hashed", sourceFileInfo.GetPath())
-			} else {
-				clog.Infof("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
-			}
-			return nil
-		}
-
 		// TODO(16): Check if has permission to move to destination
 		err := cfs.SafeRename(sourceFileInfo.GetPath(), destination)
 		if err == nil {
-			clog.InfoSuccessf("\"%s\" -> %s", sourceFileInfo.GetPath(), destination)
+			ReportOperation(
+				MachineOptions(fuzzyMachineOptions),
+				OperationRenamed,
+				sourceFileInfo,
+				cfs.GetUnvalidatedPath(destination, cfs.PathIsFile),
+			)
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) || errors.Is(err, cfs.ErrFileExists) {
 			continue

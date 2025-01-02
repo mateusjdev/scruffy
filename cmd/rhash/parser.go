@@ -37,7 +37,6 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
-	// TODO(5): Work on verbose flag
 	verbose, _ := cmd.Flags().GetBool("verbose")
 
 	// TODO(6): Work on uppercase flag
@@ -126,15 +125,16 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	clog.Debugf("inputPathInfo.GetPath(): %s", inputPathInfo.GetPath())
 	clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.GetPath())
 
-	// FUZZY_MACHINE
-
 	if hash == HashAlgorithmFuzzy {
+		// FUZZY_MACHINE
+
 		fuzzyMachineOptions := FuzzyMachineOptions{
 			uppercase: uppercase,
 			truncate:  truncate,
 			// INFO: For file naming this (dryRun) will be random,
 			// but at least it will show the destination path
 			dryRun:  dryRun,
+			verbose: verbose,
 		}
 
 		// PATH_WALK
@@ -150,10 +150,11 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 				uppercase: uppercase,
 				truncate:  truncate,
 				dryRun:    dryRun,
+				verbose:   verbose,
 			},
 		}
 
 		// PATH_WALK
-EnqueuePath(hashMachine, inputPathInfo, outputPathInfo)
+		EnqueuePath(hashMachine, inputPathInfo, outputPathInfo)
 	}
 }

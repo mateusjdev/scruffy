@@ -18,15 +18,13 @@ const (
 	// LevelCritical
 )
 
-type StringIcon string
-
 const (
-	printDebug       StringIcon = "\x1b[30;47m DEBUG \x1b[0m "
-	printInfo        StringIcon = "\x1b[37;44m INFO \x1b[0m "
-	printInfoSuccess StringIcon = "\x1b[37;42m INFO \x1b[0m "
-	printInfoError   StringIcon = "\x1b[37;41m INFO \x1b[0m "
-	printWarning     StringIcon = "\x1b[37;43m WARNING \x1b[0m "
-	printError       StringIcon = "\x1b[37;41m ERROR \x1b[0m "
+	printDebug       string = "\x1b[30;47m DEBUG \x1b[0m "
+	printInfo        string = "\x1b[37;44m INFO \x1b[0m "
+	printInfoSuccess string = "\x1b[37;42m INFO \x1b[0m "
+	printInfoError   string = "\x1b[37;41m INFO \x1b[0m "
+	printWarning     string = "\x1b[37;43m WARNING \x1b[0m "
+	printError       string = "\x1b[37;41m ERROR \x1b[0m "
 )
 
 // Ensure space between logs:
@@ -53,32 +51,32 @@ func levelPrintfErr(level logLevel, msg string, a ...any) {
 }
 
 func Debugf(msg string, args ...any) {
-	msg = string(printDebug) + msg
+	msg = printDebug + msg
 	levelPrintfOut(LevelDebug, msg, args...)
 }
 
 func Infof(msg string, args ...any) {
-	msg = string(printInfo) + msg
+	msg = printInfo + msg
 	levelPrintfOut(LevelInfo, msg, args...)
 }
 
 func InfoSuccessf(msg string, args ...any) {
-	msg = string(printInfoSuccess) + msg
+	msg = printInfoSuccess + msg
 	levelPrintfOut(LevelInfo, msg, args...)
 }
 
 func InfoErrorf(msg string, args ...any) {
-	msg = string(printInfoError) + msg
+	msg = printInfoError + msg
 	levelPrintfOut(LevelInfo, msg, args...)
 }
 
 func Warningf(msg string, args ...any) {
-	msg = string(printWarning) + msg
+	msg = printWarning + msg
 	levelPrintfOut(LevelWarning, msg, args...)
 }
 
 func Errorf(msg string, args ...any) {
-	msg = string(printError) + msg
+	msg = printError + msg
 	levelPrintfErr(LevelError, msg, args...)
 }
 
