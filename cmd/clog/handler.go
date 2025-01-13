@@ -7,6 +7,7 @@ type exitCode uint8
 const (
 	ErrCodeGeneric exitCode = iota + 1
 	ErrUserGeneric
+	ErrUserInput
 )
 
 func ExitBecause(reason exitCode) {

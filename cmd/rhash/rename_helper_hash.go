@@ -29,7 +29,7 @@ var (
 
 // TODO(8): Work on lenght/truncate flag
 // Chosse between "--hash SHA224 ..." or "--hash SHA2 --lenght 224"
-func getHashAlgorithm(hash string, lenght int) (hash.Hash, error) {
+func GetHashAlgorithm(hash string, lenght int) (hash.Hash, error) {
 	switch hash {
 	case HashAlgorithmBlake2b:
 		// lenght: fixed_256_bits (256, 384, 512)
@@ -68,11 +68,11 @@ func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string,
 
 	hashMachine.Machine.Reset()
 
-	if hashMachine.Options.truncate != 0 {
-		hashString = hashString[0:hashMachine.Options.truncate]
+	if hashMachine.Options.Truncate != 0 {
+		hashString = hashString[0:hashMachine.Options.Truncate]
 	}
 
-	if hashMachine.Options.uppercase {
+	if hashMachine.Options.Uppercase {
 		hashString = strings.ToUpper(hashString)
 	}
 
@@ -89,7 +89,7 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 
 	destinationFileInfo := cfs.GetUnvalidatedPath(destination, cfs.PathIsFile)
 
-	if hashMachine.Options.dryRun {
+	if hashMachine.Options.DryRun {
 		if sourceFileInfo.GetPath() == destination {
 			ReportOperation(
 				MachineOptions(hashMachine.Options),

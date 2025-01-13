@@ -17,12 +17,23 @@ const (
 	OperationDryRun
 )
 
+const (
+	HashAlgorithmBlake2b string = "blake2b"
+	HashAlgorithmBlake3  string = "blake3"
+	HashAlgorithmMD5     string = "md5"
+	HashAlgorithmSHA1    string = "sha1"
+	HashAlgorithmSHA256  string = "sha256"
+	HashAlgorithmSHA512  string = "sha512"
+
+	HashAlgorithmFuzzy string = "fuzzy"
+)
+
 type MachineOptions struct {
-	uppercase         bool
-	truncate          uint8
-	dryRun            bool
-	abbreviatePath    bool
-	relativeDirectory string
+	Uppercase         bool
+	Truncate          uint8
+	DryRun            bool
+	AbbreviatePath    bool
+	RelativeDirectory string
 }
 
 type RenameHelper interface {
@@ -58,14 +69,14 @@ func StripCommonPrefix(path1, path2 string) (string, string) {
 func ReportOperation(options MachineOptions, operation Operation, source, destination cfs.CustomFileInfo) {
 	var fSource, fDestination string
 	// TODO: parse isSameVolume on rhash/parse.go (before)
-	if !options.abbreviatePath || isNotSameVolume(fSource, fDestination) {
+	if !options.AbbreviatePath || isNotSameVolume(fSource, fDestination) {
 		fSource = source.GetPath()
 		fDestination = destination.GetPath()
 	} else {
 		// TODO: Use relative?
 		fSource, _ = StripCommonPrefix(
 			source.GetPath(),
-			options.relativeDirectory,
+			options.RelativeDirectory,
 		)
 
 		var err error

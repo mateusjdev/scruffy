@@ -14,17 +14,18 @@ const (
 )
 
 var (
-	seed *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+	seed       *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+	charsetLen int        = len(charset)
 )
 
 type FuzzyMachineOptions MachineOptions
 
 func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ cfs.CustomFileInfo) (string, error) {
-	b := make([]byte, fuzzyMachineOptions.truncate)
+	b := make([]byte, fuzzyMachineOptions.Truncate)
 	for i := range b {
-		b[i] = charset[seed.Intn(len(charset))]
+		b[i] = charset[seed.Intn(charsetLen)]
 	}
-	if fuzzyMachineOptions.uppercase {
+	if fuzzyMachineOptions.Uppercase {
 		return strings.ToUpper(string(b)), nil
 	}
 	return string(b), nil
@@ -35,7 +36,7 @@ func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.Cus
 
 	// If fails to rename, just generate a new name
 
-	if fuzzyMachineOptions.dryRun {
+	if fuzzyMachineOptions.DryRun {
 		fileHash, _ := fuzzyMachineOptions.getChecksum(sourceFileInfo)
 		destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
 
