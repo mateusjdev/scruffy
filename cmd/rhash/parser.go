@@ -37,7 +37,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
-	verbose, _ := cmd.Flags().GetBool("verbose")
+	abbreviatePath, _ := cmd.Flags().GetBool("abbreviate-path")
 
 	// TODO(6): Work on uppercase flag
 	uppercase, _ := cmd.Flags().GetBool("uppercase")
@@ -59,13 +59,13 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 	dry-run: %t
 	silent: %t
 	recursive: %t
-	verbose: %t
+	abbreviate-path: %t
 	skipGitCheck: %t
 	uppercase: %t
 	truncate: %d
 	inputPath: %s
 	outputPath: %s
-	hash: %s`, dryRun, silent, recursive, verbose, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
+	hash: %s`, dryRun, silent, recursive, abbreviatePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
 
 	if truncate < ARGS_MIN_TRUNCATE {
 		clog.Errorf("--truncate is very low, choose >= %d", ARGS_MIN_TRUNCATE)
@@ -140,7 +140,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 			// INFO: For file naming this (dryRun) will be random,
 			// but at least it will show the destination path
 			dryRun:            dryRun,
-			verbose:           verbose,
+			abbreviatePath:    abbreviatePath,
 			relativeDirectory: relativeDirectory,
 		}
 
@@ -157,7 +157,7 @@ func RenameFilesToHash(cmd *cobra.Command, args []string) {
 				uppercase:         uppercase,
 				truncate:          truncate,
 				dryRun:            dryRun,
-				verbose:           verbose,
+				abbreviatePath:    abbreviatePath,
 				relativeDirectory: relativeDirectory,
 			},
 		}

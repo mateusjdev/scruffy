@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// TODO: use a custom lib?
+// TODO: add a --no-color or --simple-text or --json
+
 var logLoggerLevel logLevel
 
 type logLevel uint8
@@ -15,7 +18,6 @@ const (
 	LevelInfo
 	LevelWarning
 	LevelError
-	// LevelCritical
 )
 
 const (
@@ -33,7 +35,7 @@ func ensureNewLine(msg *string) {
 	if strings.HasSuffix(*msg, "\n") {
 		return
 	}
-	*msg = *msg + "\n"
+	*msg += "\n"
 }
 
 func levelPrintfOut(level logLevel, msg string, a ...any) {
@@ -51,33 +53,27 @@ func levelPrintfErr(level logLevel, msg string, a ...any) {
 }
 
 func Debugf(msg string, args ...any) {
-	msg = printDebug + msg
-	levelPrintfOut(LevelDebug, msg, args...)
+	levelPrintfOut(LevelDebug, printDebug+msg, args...)
 }
 
 func Infof(msg string, args ...any) {
-	msg = printInfo + msg
-	levelPrintfOut(LevelInfo, msg, args...)
+	levelPrintfOut(LevelInfo, printInfo+msg, args...)
 }
 
 func InfoSuccessf(msg string, args ...any) {
-	msg = printInfoSuccess + msg
-	levelPrintfOut(LevelInfo, msg, args...)
+	levelPrintfOut(LevelInfo, printInfoSuccess+msg, args...)
 }
 
 func InfoErrorf(msg string, args ...any) {
-	msg = printInfoError + msg
-	levelPrintfOut(LevelInfo, msg, args...)
+	levelPrintfOut(LevelInfo, printInfoError+msg, args...)
 }
 
 func Warningf(msg string, args ...any) {
-	msg = printWarning + msg
-	levelPrintfOut(LevelWarning, msg, args...)
+	levelPrintfOut(LevelWarning, printWarning+msg, args...)
 }
 
 func Errorf(msg string, args ...any) {
-	msg = printError + msg
-	levelPrintfErr(LevelError, msg, args...)
+	levelPrintfErr(LevelError, printError+msg, args...)
 }
 
 func SetLogLevel(level logLevel) {

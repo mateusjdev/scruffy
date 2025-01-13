@@ -21,7 +21,7 @@ type MachineOptions struct {
 	uppercase         bool
 	truncate          uint8
 	dryRun            bool
-	verbose           bool
+	abbreviatePath    bool
 	relativeDirectory string
 }
 
@@ -57,10 +57,12 @@ func StripCommonPrefix(path1, path2 string) (string, string) {
 
 func ReportOperation(options MachineOptions, operation Operation, source, destination cfs.CustomFileInfo) {
 	var fSource, fDestination string
-	if options.verbose || isNotSameVolume(fSource, fDestination) {
+	// TODO: parse isSameVolume on rhash/parse.go (before)
+	if !options.abbreviatePath || isNotSameVolume(fSource, fDestination) {
 		fSource = source.GetPath()
 		fDestination = destination.GetPath()
 	} else {
+		// TODO: Use relative?
 		fSource, _ = StripCommonPrefix(
 			source.GetPath(),
 			options.relativeDirectory,

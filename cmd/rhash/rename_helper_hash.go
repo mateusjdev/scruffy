@@ -66,7 +66,6 @@ func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string,
 	hashInBytes := hashMachine.Machine.Sum(nil)
 	hashString := hex.EncodeToString(hashInBytes)
 
-	// TODO(17): Benchark reuse(.Reset()) vs recreate
 	hashMachine.Machine.Reset()
 
 	if hashMachine.Options.truncate != 0 {
