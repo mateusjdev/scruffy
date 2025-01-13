@@ -4,6 +4,7 @@ import (
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
 	"mateusjdev/scruffy/cmd/rhash"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -16,7 +17,7 @@ const (
 )
 
 var (
-	abbreviatePath bool
+	absolutePath   bool
 	dryRun         bool
 	force          bool
 	hash           string
@@ -26,6 +27,7 @@ var (
 	skipGitCheck   bool
 	inputPath      string
 	outputPath     string
+	currentWorkDir string
 )
 
 var rhashCmd = &cobra.Command{
@@ -62,13 +64,13 @@ var rhashCmd = &cobra.Command{
 	dry-run: %t
 	silent: %t
 	recursive: %t
-	abbreviate-path: %t
+	absolute-path: %t
 	skipGitCheck: %t
 	uppercase: %t
 	truncate: %d
 	inputPath: %s
 	outputPath: %s
-	hash: %s`, dryRun, silent, recursive, abbreviatePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
+	hash: %s`, dryRun, silent, recursive, absolutePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		clog.Debugf("Starting module::%s", cmd.Use)
@@ -125,12 +127,9 @@ var rhashCmd = &cobra.Command{
 		clog.Debugf("inputPathInfo.GetPath(): %s", inputPathInfo.GetPath())
 		clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.GetPath())
 
-		var relativeDirectory string
-		if inputPathInfo.GetPathType() == cfs.PathIsFile {
-			relativeDirectory = filepath.Dir(inputPathInfo.GetPath())
-		} else {
-			relativeDirectory = inputPathInfo.GetPath()
-		}
+		cwd, err := os.Getwd()
+		clog.CheckIfError(err)
+		currentWorkDir = cwd
 
 		if hash == rhash.HashAlgorithmFuzzy {
 			// FUZZY_MACHINE
@@ -139,9 +138,9 @@ var rhashCmd = &cobra.Command{
 				Truncate:  truncate,
 				// INFO: For file naming this (dryRun) will be random,
 				// but at least it will show the destination path
-				DryRun:            dryRun,
-				AbbreviatePath:    abbreviatePath,
-				RelativeDirectory: relativeDirectory,
+				DryRun:         dryRun,
+				AbsolutePath:   absolutePath,
+				CurrentWorkDir: currentWorkDir,
 			}
 
 			// PATH_WALK
@@ -153,11 +152,11 @@ var rhashCmd = &cobra.Command{
 			hashMachine := rhash.HashMachine{
 				Machine: hashAlgorithm,
 				Options: rhash.HashMachineOptions{
-					Uppercase:         uppercase,
-					Truncate:          truncate,
-					DryRun:            dryRun,
-					AbbreviatePath:    abbreviatePath,
-					RelativeDirectory: relativeDirectory,
+					Uppercase:      uppercase,
+					Truncate:       truncate,
+					DryRun:         dryRun,
+					AbsolutePath:   absolutePath,
+					CurrentWorkDir: currentWorkDir,
 				},
 			}
 
@@ -183,7 +182,7 @@ func init() {
 	// INFO: If --output/defaultOutputPath is not declared, it will be the same as --input/defaultInputPath
 	rhashCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Location were hashed files will be stored")
 
-	rhashCmd.Flags().BoolVarP(&abbreviatePath, "abbreviate-path", "a", false, "Abbreviate paths when logging")
+	rhashCmd.Flags().BoolVarP(&absolutePath, "absolute-path", "A", false, "Print absolute paths relative when logging")
 
 	rhashCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Don't rename files")
 

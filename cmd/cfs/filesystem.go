@@ -29,6 +29,10 @@ var (
 	ErrFileExists   = errors.New("file already exist")
 )
 
+func IsSameVolume(path1, path2 string) bool {
+	return filepath.VolumeName(path1) == filepath.VolumeName(path2)
+}
+
 // TODO(16): Check if has permission to move to destination
 // ?: return cfs.CustomFileInfo?
 func SafeRename(source string, destination string) error {

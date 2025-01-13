@@ -4,9 +4,7 @@ import (
 	"io/fs"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
-	"os"
 	"path/filepath"
-	"strings"
 )
 
 type Operation int
@@ -29,11 +27,11 @@ const (
 )
 
 type MachineOptions struct {
-	Uppercase         bool
-	Truncate          uint8
-	DryRun            bool
-	AbbreviatePath    bool
-	RelativeDirectory string
+	Uppercase      bool
+	Truncate       uint8
+	DryRun         bool
+	AbsolutePath   bool
+	CurrentWorkDir string
 }
 
 type RenameHelper interface {
@@ -45,50 +43,36 @@ type RenameMachine interface {
 	RenameHelper
 }
 
-func isNotSameVolume(path1, path2 string) bool {
-	return filepath.VolumeName(path1) != filepath.VolumeName(path2)
-}
-
-func StripCommonPrefix(path1, path2 string) (string, string) {
-	if isNotSameVolume(path1, path2) {
-		return path1, path2
-	}
-
-	commonPrefix := filepath.Dir(path1)
-	for {
-		if strings.HasPrefix(path2, commonPrefix) {
-			break
-		}
-		clog.Debugf("commonPrefix: %s", commonPrefix)
-		commonPrefix = filepath.Dir(commonPrefix)
-	}
-	commonPrefix = commonPrefix + string(os.PathSeparator)
-	return strings.TrimPrefix(path1, commonPrefix), strings.TrimPrefix(path2, commonPrefix)
-}
-
 func ReportOperation(options MachineOptions, operation Operation, source, destination cfs.CustomFileInfo) {
 	var fSource, fDestination string
 	// TODO: parse isSameVolume on rhash/parse.go (before)
-	if !options.AbbreviatePath || isNotSameVolume(fSource, fDestination) {
+	if options.AbsolutePath {
 		fSource = source.GetPath()
 		fDestination = destination.GetPath()
 	} else {
-		// TODO: Use relative?
-		fSource, _ = StripCommonPrefix(
-			source.GetPath(),
-			options.RelativeDirectory,
-		)
-
 		var err error
-		fDestination, err = filepath.Rel(filepath.Dir(source.GetPath()), destination.GetPath())
-		if err != nil {
+		if cfs.IsSameVolume(options.CurrentWorkDir, source.GetPath()) {
+			fSource, err = filepath.Rel(options.CurrentWorkDir, source.GetPath())
+			if err != nil {
+				fSource = source.GetPath()
+			}
+		} else {
+			fSource = source.GetPath()
+		}
+
+		if cfs.IsSameVolume(options.CurrentWorkDir, destination.GetPath()) {
+			fDestination, err = filepath.Rel(options.CurrentWorkDir, destination.GetPath())
+			if err != nil {
+				fDestination = destination.GetPath()
+			}
+		} else {
 			fDestination = destination.GetPath()
 		}
 	}
 
 	switch operation {
 	case OperationSameFile:
-		clog.Infof("file \"%s\" already hashed", fSource)
+		clog.Infof("file \"%s\" already match its hash", fSource)
 	case OperationRenamed:
 		clog.InfoSuccessf("\"%s\" -> %s", fSource, fDestination)
 	case OperationDryRun:
