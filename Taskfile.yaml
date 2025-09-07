@@ -18,6 +18,10 @@ vars:
   BUILD_LDFLAGS: '-s -w -X "mateusjdev/scruffy/cmd.ApplicationVersion={{.GIT_TAG_VERSION}} - {{.GIT_STATUS}}"'
 
 tasks:
+  internal-tidy:
+    run: once
+    cmd: go mod tidy
+
   internal-build:
     internal: true
     requires:
@@ -25,7 +29,9 @@ tasks:
     env:
       GOOS: "{{.GOOS | default OS}}"
       GOARCH: "{{.GOARCH | default ARCH}}"
-    cmd: go build -o {{ .BUILD_OUTPUT }}{{.BUILD_EXTENSION}} -ldflags='{{ .BUILD_LDFLAGS }}'
+    cmds:
+      - task: internal-tidy
+      - go build -o {{ .BUILD_OUTPUT }}{{.BUILD_EXTENSION}} -ldflags='{{ .BUILD_LDFLAGS }}'
 
   internal-build-os-arch:
     internal: true
@@ -39,6 +45,7 @@ tasks:
           GOARCH: "{{.GOARCH}}"
 
   build-linux-arm64:
+    run: once
     cmds:
       - task: internal-build-os-arch
         vars:
@@ -46,6 +53,7 @@ tasks:
           GOARCH: "arm64"
 
   build-linux-amd64:
+    run: once
     cmds:
       - task: internal-build-os-arch
         vars:
@@ -53,6 +61,7 @@ tasks:
           GOARCH: "amd64"
 
   build-windows-amd64:
+    run: once
     cmds:
       - task: internal-build-os-arch
         vars:
@@ -60,12 +69,14 @@ tasks:
           GOARCH: "amd64"
 
   build-all:
+    run: once
     cmds:
       - task: build-linux-arm64
       - task: build-linux-amd64
       - task: build-windows-amd64
 
   build:
+    run: once
     vars:
       BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}"
     cmds:
@@ -74,5 +85,9 @@ tasks:
           BUILD_OUTPUT: "{{.BUILD_OUTPUT}}"
 
   install:
-    cmds:
-      - go install -ldflags='{{ .BUILD_LDFLAGS }}'
+    run: once
+    cmd: go install -ldflags='{{ .BUILD_LDFLAGS }}'
+
+  tidy:
+    cmd:
+      task: internal-tidy
