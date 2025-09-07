@@ -1,0 +1,43 @@
+version: '3'
+
+vars:
+  BUILD_OUT_DIR: './build'
+  BUILD_APP_NAME: 'scruffy'
+  BUILD_EXTENSION: '{{if eq .OS "Windows_NT"}}.exe{{end}}'
+  BUILD_LDFLAGS: '-s -w'
+
+tasks:
+  build-linux-arm64:
+    env:
+      GOOS: "linux"
+      GOARCH: "arm64"
+    cmds:
+      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH" -ldflags="{{ .BUILD_LDFLAGS }}"
+
+  build-linux-amd64:
+    env:
+      GOOS: "linux"
+      GOARCH: "amd64"
+    cmds:
+      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH" -ldflags="{{ .BUILD_LDFLAGS }}"
+
+  build-windows-amd64:
+    env:
+      GOOS: "windows"
+      GOARCH: "amd64"
+    cmds:
+      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH{{ .BUILD_EXTENSION }}" -ldflags="{{ .BUILD_LDFLAGS }}"
+
+  build-all:
+    cmds:
+      - task: build-linux-arm64
+      - task: build-linux-amd64
+      - task: build-windows-amd64
+
+  build:
+    cmds:
+      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}{{ .BUILD_EXTENSION }}" -ldflags="{{ .BUILD_LDFLAGS }}"
+
+  install:
+    cmds:
+      - go install -ldflags="{{ .BUILD_LDFLAGS }}"
