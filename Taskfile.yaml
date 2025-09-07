@@ -1,0 +1,93 @@
+version: '3'
+
+vars:
+  BUILD_OUT_DIR: './build'
+  BUILD_APP_NAME: 'scruffy'
+  BUILD_EXTENSION: '{{if eq OS "windows"}}.exe{{end}}'
+  GIT_TAG_VERSION:
+    sh: git describe --tags --abbrev=0 --match "v*"
+  GIT_COMMIT:
+    # git log -n 1 --format=%h
+    sh: git rev-parse --short HEAD
+  GIT_DIRTY: 
+    sh: |
+      if [ -n "$(git status --porcelain)" ]; then
+        echo " (dirty index)"
+      fi
+  GIT_STATUS: "commit {{.GIT_COMMIT}}{{.GIT_DIRTY}}"
+  BUILD_LDFLAGS: '-s -w -X "mateusjdev/scruffy/cmd.ApplicationVersion={{.GIT_TAG_VERSION}} - {{.GIT_STATUS}}"'
+
+tasks:
+  internal-tidy:
+    run: once
+    cmd: go mod tidy
+
+  internal-build:
+    internal: true
+    requires:
+      vars: [BUILD_OUTPUT]
+    env:
+      GOOS: "{{.GOOS | default OS}}"
+      GOARCH: "{{.GOARCH | default ARCH}}"
+    cmds:
+      - task: internal-tidy
+      - go build -o {{ .BUILD_OUTPUT }}{{.BUILD_EXTENSION}} -ldflags='{{ .BUILD_LDFLAGS }}'
+
+  internal-build-os-arch:
+    internal: true
+    requires:
+      vars: [GOOS, GOARCH]
+    cmds:
+      - task: internal-build
+        vars:
+          BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-{{.GOOS}}-{{.GOARCH}}"
+          GOOS: "{{.GOOS}}"
+          GOARCH: "{{.GOARCH}}"
+
+  build-linux-arm64:
+    run: once
+    cmds:
+      - task: internal-build-os-arch
+        vars:
+          GOOS: "linux"
+          GOARCH: "arm64"
+
+  build-linux-amd64:
+    run: once
+    cmds:
+      - task: internal-build-os-arch
+        vars:
+          GOOS: "linux"
+          GOARCH: "amd64"
+
+  build-windows-amd64:
+    run: once
+    cmds:
+      - task: internal-build-os-arch
+        vars:
+          GOOS: "windows"
+          GOARCH: "amd64"
+
+  build-all:
+    run: once
+    cmds:
+      - task: build-linux-arm64
+      - task: build-linux-amd64
+      - task: build-windows-amd64
+
+  build:
+    run: once
+    vars:
+      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}"
+    cmds:
+      - task: internal-build
+        vars:
+          BUILD_OUTPUT: "{{.BUILD_OUTPUT}}"
+
+  install:
+    run: once
+    cmd: go install -ldflags='{{ .BUILD_LDFLAGS }}'
+
+  tidy:
+    cmd:
+      task: internal-tidy
