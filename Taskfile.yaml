@@ -4,29 +4,46 @@ vars:
   BUILD_OUT_DIR: './build'
   BUILD_APP_NAME: 'scruffy'
   BUILD_EXTENSION: '{{if eq .OS "Windows_NT"}}.exe{{end}}'
-  BUILD_LDFLAGS: '-s -w'
+  GIT_TAG_VERSION:
+    sh: git describe --tags --abbrev=0 --match "v*"
+  GIT_COMMIT:
+    # git log -n 1 --format=%h
+    sh: git rev-parse --short HEAD
+  GIT_DIRTY: 
+    sh: |
+      if [ -n "$(git status --porcelain)" ]; then
+        echo " (dirty index)"
+      fi
+  GIT_STATUS: "commit {{.GIT_COMMIT}}{{.GIT_DIRTY}}"
+  BUILD_LDFLAGS: '-s -w -X "mateusjdev/scruffy/cmd.ApplicationVersion={{.GIT_TAG_VERSION}} - {{.GIT_STATUS}}"'
 
 tasks:
   build-linux-arm64:
     env:
       GOOS: "linux"
       GOARCH: "arm64"
+    vars:
+      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH"
     cmds:
-      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH" -ldflags="{{ .BUILD_LDFLAGS }}"
+      - go build -o {{ .BUILD_OUTPUT }} -ldflags='{{ .BUILD_LDFLAGS }}'
 
   build-linux-amd64:
     env:
       GOOS: "linux"
       GOARCH: "amd64"
+    vars:
+      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH"
     cmds:
-      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH" -ldflags="{{ .BUILD_LDFLAGS }}"
+      - go build -o {{ .BUILD_OUTPUT }} -ldflags='{{ .BUILD_LDFLAGS }}'
 
   build-windows-amd64:
     env:
       GOOS: "windows"
       GOARCH: "amd64"
+    vars:
+      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH"
     cmds:
-      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH{{ .BUILD_EXTENSION }}" -ldflags="{{ .BUILD_LDFLAGS }}"
+      - go build -o {{ .BUILD_OUTPUT }}{{ .BUILD_EXTENSION }} -ldflags='{{ .BUILD_LDFLAGS }}'
 
   build-all:
     cmds:
@@ -35,9 +52,11 @@ tasks:
       - task: build-windows-amd64
 
   build:
+    vars:
+      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}"
     cmds:
-      - go build -o "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}{{ .BUILD_EXTENSION }}" -ldflags="{{ .BUILD_LDFLAGS }}"
+      - go build -o {{ .BUILD_OUTPUT }}{{ .BUILD_EXTENSION }} -ldflags='{{ .BUILD_LDFLAGS }}'
 
   install:
     cmds:
-      - go install -ldflags="{{ .BUILD_LDFLAGS }}"
+      - go install -ldflags='{{ .BUILD_LDFLAGS }}'
