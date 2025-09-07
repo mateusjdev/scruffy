@@ -3,7 +3,7 @@ version: '3'
 vars:
   BUILD_OUT_DIR: './build'
   BUILD_APP_NAME: 'scruffy'
-  BUILD_EXTENSION: '{{if eq .OS "Windows_NT"}}.exe{{end}}'
+  BUILD_EXTENSION: '{{if eq OS "windows"}}.exe{{end}}'
   GIT_TAG_VERSION:
     sh: git describe --tags --abbrev=0 --match "v*"
   GIT_COMMIT:
@@ -18,32 +18,46 @@ vars:
   BUILD_LDFLAGS: '-s -w -X "mateusjdev/scruffy/cmd.ApplicationVersion={{.GIT_TAG_VERSION}} - {{.GIT_STATUS}}"'
 
 tasks:
-  build-linux-arm64:
+  internal-build:
+    internal: true
+    requires:
+      vars: [BUILD_OUTPUT]
     env:
-      GOOS: "linux"
-      GOARCH: "arm64"
-    vars:
-      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH"
+      GOOS: "{{.GOOS | default OS}}"
+      GOARCH: "{{.GOARCH | default ARCH}}"
+    cmd: go build -o {{ .BUILD_OUTPUT }}{{.BUILD_EXTENSION}} -ldflags='{{ .BUILD_LDFLAGS }}'
+
+  internal-build-os-arch:
+    internal: true
+    requires:
+      vars: [GOOS, GOARCH]
     cmds:
-      - go build -o {{ .BUILD_OUTPUT }} -ldflags='{{ .BUILD_LDFLAGS }}'
+      - task: internal-build
+        vars:
+          BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-{{.GOOS}}-{{.GOARCH}}"
+          GOOS: "{{.GOOS}}"
+          GOARCH: "{{.GOARCH}}"
+
+  build-linux-arm64:
+    cmds:
+      - task: internal-build-os-arch
+        vars:
+          GOOS: "linux"
+          GOARCH: "arm64"
 
   build-linux-amd64:
-    env:
-      GOOS: "linux"
-      GOARCH: "amd64"
-    vars:
-      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH"
     cmds:
-      - go build -o {{ .BUILD_OUTPUT }} -ldflags='{{ .BUILD_LDFLAGS }}'
+      - task: internal-build-os-arch
+        vars:
+          GOOS: "linux"
+          GOARCH: "amd64"
 
   build-windows-amd64:
-    env:
-      GOOS: "windows"
-      GOARCH: "amd64"
-    vars:
-      BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}-$GOOS-$GOARCH"
     cmds:
-      - go build -o {{ .BUILD_OUTPUT }}{{ .BUILD_EXTENSION }} -ldflags='{{ .BUILD_LDFLAGS }}'
+      - task: internal-build-os-arch
+        vars:
+          GOOS: "windows"
+          GOARCH: "amd64"
 
   build-all:
     cmds:
@@ -55,7 +69,9 @@ tasks:
     vars:
       BUILD_OUTPUT: "{{ .BUILD_OUT_DIR }}/{{ .BUILD_APP_NAME }}"
     cmds:
-      - go build -o {{ .BUILD_OUTPUT }}{{ .BUILD_EXTENSION }} -ldflags='{{ .BUILD_LDFLAGS }}'
+      - task: internal-build
+        vars:
+          BUILD_OUTPUT: "{{.BUILD_OUTPUT}}"
 
   install:
     cmds:
