@@ -3,7 +3,6 @@ version: '3'
 vars:
   BUILD_OUT_DIR: './build'
   BUILD_APP_NAME: 'scruffy'
-  BUILD_EXTENSION: '{{if eq OS "windows"}}.exe{{end}}'
   GIT_TAG_VERSION:
     sh: git describe --tags --abbrev=0 --match "v*"
   GIT_COMMIT:
@@ -29,6 +28,8 @@ tasks:
     env:
       GOOS: "{{.GOOS | default OS}}"
       GOARCH: "{{.GOARCH | default ARCH}}"
+    vars:
+      BUILD_EXTENSION: '{{if eq .GOOS "windows"}}.exe{{end}}'
     cmds:
       - task: internal-tidy
       - go build -o {{ .BUILD_OUTPUT }}{{.BUILD_EXTENSION}} -ldflags='{{ .BUILD_LDFLAGS }}'
