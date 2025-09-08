@@ -81,12 +81,66 @@ func ReportOperation(options MachineOptions, operation Operation, source, destin
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, outputPathInfo cfs.CustomFileInfo) error {
+func EnqueuePathOutput(renameMachine RenameMachine, recursive bool, inputPathInfo, outputPathInfo cfs.CustomFileInfo) error {
+
+	clog.Debugf("EnqueuedO: \"%s\"", inputPathInfo.GetPath())
+
+	if inputPathInfo.GetPathType() == cfs.PathIsFile {
+		clog.Debugf("Working on file \"%s\"", inputPathInfo.GetPath())
+		return renameMachine.workOnFile(inputPathInfo, outputPathInfo)
+	}
+
+	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
+		clog.Errorf("Not a valid file or directory")
+		clog.ExitBecause(clog.ErrCodeGeneric)
+	}
+
+	// TODO(21): Check WalkDir error/return
+	filepath.WalkDir(inputPathInfo.GetPath(), func(path string, di fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if di.IsDir() {
+			if inputPathInfo.GetPath() == path {
+				return nil
+			}
+
+			if recursive {
+				recursePathInfo, err := cfs.GetValidatedPath(path)
+				clog.CheckIfError(err)
+
+				EnqueuePathOutput(
+					renameMachine,
+					recursive,
+					recursePathInfo,
+					recursePathInfo,
+				)
+			}
+
+			// Skip walk(dir) from --recuse anyway, this helps ensure destination folder will be respected
+			return filepath.SkipDir
+		}
+
+		fileInfo, err := cfs.GetValidatedPath(path)
+		clog.CheckIfError(err)
+
+		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())
+		return renameMachine.workOnFile(fileInfo, outputPathInfo)
+	})
+
+	return nil
+}
+
+// TODO(14): Check need of path validation or continue to use CustomFileInfo
+func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo cfs.CustomFileInfo) error {
 
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.GetPath())
 
 	if inputPathInfo.GetPathType() == cfs.PathIsFile {
 		clog.Debugf("Working on file \"%s\"", inputPathInfo.GetPath())
+		outputPathInfo, err := cfs.GetValidatedPath(filepath.Dir(inputPathInfo.GetPath()))
+		clog.CheckIfError(err)
 		return renameMachine.workOnFile(inputPathInfo, outputPathInfo)
 	}
 
@@ -114,7 +168,6 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 					renameMachine,
 					recursive,
 					recursePathInfo,
-					recursePathInfo,
 				)
 			}
 
@@ -123,6 +176,9 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 		}
 
 		fileInfo, err := cfs.GetValidatedPath(path)
+		clog.CheckIfError(err)
+
+		outputPathInfo, err := cfs.GetValidatedPath(filepath.Dir(fileInfo.GetPath()))
 		clog.CheckIfError(err)
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())

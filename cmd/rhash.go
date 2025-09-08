@@ -5,7 +5,6 @@ import (
 	"mateusjdev/scruffy/cmd/clog"
 	"mateusjdev/scruffy/cmd/rhash"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -73,59 +72,47 @@ var rhashCmd = &cobra.Command{
 	hash: %s`, dryRun, silent, recursive, absolutePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		clog.Debugf("Starting module::%s", cmd.Use)
+		clog.Debugf("Starting module::%s", cmd.CalledAs())
 
-		if inputPath == "" {
-			clog.Errorf("--input is empty or invalid")
-			clog.ExitBecause(clog.ErrUserGeneric)
+		inputInfoList := []cfs.CustomFileInfo{}
+
+		for _, arg := range args {
+			tmpPath, err := preValidatePath(arg, cfs.PathIsFile, cfs.PathIsDirectory)
+			clog.CheckIfError(err)
+			inputInfoList = append(inputInfoList, *tmpPath)
 		}
 
-		inputPathInfo, err := cfs.GetValidatedPath(inputPath)
-		clog.CheckIfError(err)
-		if inputPathInfo.GetPathType() == cfs.PathIsNonExistent {
-			clog.Errorf("Source path %s is not a valid file or a directory\n", inputPath)
-			clog.ExitBecause(clog.ErrUserInput)
-		}
+		// TODO: Check if there's any duplicate
+		/*
+			var index int
+			for i, inputPathInfo := range inputInfoList {
 
+				if i == len(inputInfoList) {
+					index++
+				}
+
+			}
+		*/
+
+		var outputPathInfo *cfs.CustomFileInfo
 		if outputPath == "" {
 			if cmd.Flags().Lookup("output").Changed {
 				clog.Errorf("--output is empty or invalid")
 				clog.ExitBecause(clog.ErrUserInput)
 			}
-
-			if inputPathInfo.GetPathType() == cfs.PathIsFile {
-				outputPath = filepath.Dir(inputPathInfo.GetPath())
-			} else {
-				outputPath = inputPathInfo.GetPath()
-			}
+		} else {
+			// TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
+			tmpPath, err := preValidatePath(outputPath, cfs.PathIsDirectory)
+			clog.CheckIfError(err)
+			outputPathInfo = tmpPath
 		}
 
-		// TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
-		outputPathInfo, err := cfs.GetValidatedPath(outputPath)
-		clog.CheckIfError(err)
-		if outputPathInfo.GetPathType() != cfs.PathIsDirectory {
-			clog.Errorf("Destination folder \"%s\" is not a valid directory\n", outputPath)
-			clog.ExitBecause(clog.ErrUserInput)
+		for i, inputPathInfo := range inputInfoList {
+			clog.Debugf("inputPathInfo.GetPath(%d): %s", i, inputPathInfo.GetPath())
 		}
-
-		if cfs.IsGitRepo(inputPathInfo.GetPath()) {
-			if !skipGitCheck {
-				clog.Errorf("%s is in a git repo", inputPathInfo.GetPath())
-				clog.ExitBecause(clog.ErrUserGeneric)
-			}
-			clog.Infof("%s is in a git repo", inputPathInfo.GetPath())
+		if outputPathInfo != nil {
+			clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.GetPath())
 		}
-
-		if inputPathInfo.GetPath() != outputPathInfo.GetPath() && cfs.IsGitRepo(outputPathInfo.GetPath()) {
-			if !skipGitCheck {
-				clog.Errorf("%s is in a git repo", outputPathInfo.GetPath())
-				clog.ExitBecause(clog.ErrUserGeneric)
-			}
-			clog.Infof("%s is in a git repo", outputPathInfo.GetPath())
-		}
-
-		clog.Debugf("inputPathInfo.GetPath(): %s", inputPathInfo.GetPath())
-		clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.GetPath())
 
 		cwd, err := os.Getwd()
 		clog.CheckIfError(err)
@@ -144,7 +131,19 @@ var rhashCmd = &cobra.Command{
 			}
 
 			// PATH_WALK
-			rhash.EnqueuePath(fuzzyMachineOptions, recursive, inputPathInfo, outputPathInfo)
+			if outputPathInfo != nil {
+				for _, inputPathInfo := range inputInfoList {
+					err := rhash.EnqueuePathOutput(fuzzyMachineOptions, recursive, inputPathInfo, *outputPathInfo)
+					clog.CheckIfError(err)
+				}
+			} else {
+				for _, inputPathInfo := range inputInfoList {
+					err := rhash.EnqueuePath(fuzzyMachineOptions, recursive, inputPathInfo)
+					clog.CheckIfError(err)
+
+				}
+			}
+
 		} else {
 			// HASH_MACHINE
 			hashAlgorithm, err := rhash.GetHashAlgorithm(hash, int(truncate))
@@ -161,7 +160,17 @@ var rhashCmd = &cobra.Command{
 			}
 
 			// PATH_WALK
-			rhash.EnqueuePath(hashMachine, recursive, inputPathInfo, outputPathInfo)
+			if outputPathInfo != nil {
+				for _, inputPathInfo := range inputInfoList {
+					err := rhash.EnqueuePathOutput(hashMachine, recursive, inputPathInfo, *outputPathInfo)
+					clog.CheckIfError(err)
+				}
+			} else {
+				for _, inputPathInfo := range inputInfoList {
+					err := rhash.EnqueuePath(hashMachine, recursive, inputPathInfo)
+					clog.CheckIfError(err)
+				}
+			}
 		}
 	},
 }
@@ -210,4 +219,41 @@ func init() {
 
 	rhashCmd.MarkFlagFilename("input")
 	rhashCmd.MarkFlagDirname("output")
+}
+
+func preValidatePath(path string, validPathType ...cfs.PathType) (*cfs.CustomFileInfo, error) {
+	if path == "" {
+		clog.Errorf("path is empty or invalid")
+		clog.ExitBecause(clog.ErrUserGeneric)
+	}
+
+	if len(validPathType) == 0 {
+		clog.Errorf("Couldn't validate path")
+		clog.ExitBecause(clog.ErrCodeGeneric)
+	}
+
+	tmpPath, err := cfs.GetValidatedPath(path)
+	clog.CheckIfError(err)
+
+	isValid := false
+	for _, pathType := range validPathType {
+		if tmpPath.GetPathType() == pathType {
+			isValid = true
+		}
+	}
+	if !isValid {
+		clog.Errorf("Path %s is not a valid file or a directory\n", tmpPath)
+		clog.ExitBecause(clog.ErrUserInput)
+		return nil, nil
+	}
+
+	if cfs.IsGitRepo(tmpPath.GetPath()) {
+		if !skipGitCheck {
+			clog.Errorf("%s is in a git repo", tmpPath.GetPath())
+			clog.ExitBecause(clog.ErrUserGeneric)
+		}
+		clog.Infof("%s is in a git repo", tmpPath.GetPath())
+	}
+
+	return &tmpPath, nil
 }
