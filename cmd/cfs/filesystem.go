@@ -93,3 +93,40 @@ func IsGitRepo(path string) bool {
 	}
 	return true
 }
+
+func ValidatePath(path string, skipGitCheck bool, validPathType ...PathType) (*CustomFileInfo, error) {
+	if path == "" {
+		clog.Errorf("path is empty or invalid")
+		clog.ExitBecause(clog.ErrUserGeneric)
+	}
+
+	if len(validPathType) == 0 {
+		clog.Errorf("Couldn't validate path")
+		clog.ExitBecause(clog.ErrCodeGeneric)
+	}
+
+	tmpPath, err := GetValidatedPath(path)
+	clog.CheckIfError(err)
+
+	isValid := false
+	for _, pathType := range validPathType {
+		if tmpPath.GetPathType() == pathType {
+			isValid = true
+		}
+	}
+	if !isValid {
+		clog.Errorf("Path %s is not a valid file or a directory\n", tmpPath)
+		clog.ExitBecause(clog.ErrUserInput)
+		return nil, nil
+	}
+
+	if IsGitRepo(tmpPath.GetPath()) {
+		if !skipGitCheck {
+			clog.Errorf("%s is in a git repo", tmpPath.GetPath())
+			clog.ExitBecause(clog.ErrUserGeneric)
+		}
+		clog.Infof("%s is in a git repo", tmpPath.GetPath())
+	}
+
+	return &tmpPath, nil
+}

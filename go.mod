@@ -2,7 +2,10 @@ module mateusjdev/scruffy
 
 go 1.21.4
 
-require github.com/go-git/go-git/v5 v5.12.0
+require (
+	github.com/gabriel-vasile/mimetype v1.4.12
+	github.com/go-git/go-git/v5 v5.12.0
+)
 
 require github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 
