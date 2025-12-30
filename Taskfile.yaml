@@ -14,7 +14,10 @@ vars:
         echo " (dirty index)"
       fi
   GIT_STATUS: "commit {{.GIT_COMMIT}}{{.GIT_DIRTY}}"
-  BUILD_LDFLAGS: '-s -w -X "mateusjdev/scruffy/cmd.ApplicationVersion={{.GIT_TAG_VERSION}} - {{.GIT_STATUS}}"'
+  GO_VERSION:
+    sh: go version
+  BUILD_LDFLAGS: '-s -w -X "mateusjdev/scruffy/cmd.ApplicationVersion={{.GIT_TAG_VERSION}} - {{.GIT_STATUS}}" -X "mateusjdev/scruffy/cmd.GoBuildVersion={{.GO_VERSION}}"'
+  
 
 tasks:
   internal-tidy:
