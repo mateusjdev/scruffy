@@ -9,19 +9,39 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 )
 
-func checkMimeType(path cfs.CustomFileInfo) {
+func checkMimeType(path cfs.CustomFileInfo, ignoreOk bool) error {
 	clog.Debugf("Working on file \"%s\"", path.GetPath())
 	mtype, err := mimetype.DetectFile(path.GetPath())
 	if err != nil {
-		panic("ERROR")
+		return err
 	}
-	clog.InfoSuccessf("%s %s", mtype.String(), mtype.Extension())
 
+	mime := mtype.String()
+	extension := mtype.Extension()
+	fullpath := path.GetPath()
+	if extension == "" {
+		clog.Warningf("%s Unknown - %s", mime, fullpath)
+		return nil
+	}
+
+	extensionMatch := filepath.Ext(path.GetPath()) == mtype.Extension()
+	if !extensionMatch {
+		clog.Warningf("%s %s - %s", mime, extension, fullpath)
+		return nil
+	}
+
+	if ignoreOk {
+		return nil
+	}
+
+	clog.InfoSuccessf("%s %s - %s", mime, extension, fullpath)
+	return nil
 }
 
-func CheckMimeType(inputPathInfo cfs.CustomFileInfo) {
+func CheckMimeType(inputPathInfo cfs.CustomFileInfo, ignoreOk bool) {
 	if inputPathInfo.GetPathType() == cfs.PathIsFile {
-		checkMimeType(inputPathInfo)
+		err := checkMimeType(inputPathInfo, ignoreOk)
+		clog.CheckIfError(err)
 	}
 
 	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
@@ -41,7 +61,7 @@ func CheckMimeType(inputPathInfo cfs.CustomFileInfo) {
 
 			recursePathInfo, err := cfs.GetValidatedPath(path)
 			clog.CheckIfError(err)
-			CheckMimeType(recursePathInfo)
+			CheckMimeType(recursePathInfo, ignoreOk)
 
 			// Skip walk(dir) from --recuse anyway, this helps ensure destination folder will be respected
 			return filepath.SkipDir
@@ -51,7 +71,8 @@ func CheckMimeType(inputPathInfo cfs.CustomFileInfo) {
 		clog.CheckIfError(err)
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())
-		checkMimeType(fileInfo)
+		err = checkMimeType(fileInfo, ignoreOk)
+		clog.CheckIfError(err)
 		return nil
 	})
 
