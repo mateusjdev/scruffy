@@ -18,21 +18,22 @@ vars:
 
 tasks:
   internal-tidy:
+    internal: true
     run: once
     cmd: go mod tidy
 
   internal-build:
     internal: true
     requires:
-      vars: [BUILD_OUTPUT]
+      vars: [BUILD_OUTPUT, GOOS, GOARCH]
     env:
-      GOOS: "{{.GOOS | default OS}}"
-      GOARCH: "{{.GOARCH | default ARCH}}"
+      GOOS: "{{.GOOS}}"
+      GOARCH: "{{.GOARCH}}"
     vars:
       BUILD_EXTENSION: '{{if eq .GOOS "windows"}}.exe{{end}}'
     cmds:
       - task: internal-tidy
-      - go build -o {{ .BUILD_OUTPUT }}{{.BUILD_EXTENSION}} -ldflags='{{ .BUILD_LDFLAGS }}'
+      - go build -trimpath -o {{ .BUILD_OUTPUT }}{{.BUILD_EXTENSION}} -ldflags='{{ .BUILD_LDFLAGS }}'
 
   internal-build-os-arch:
     internal: true
@@ -84,10 +85,12 @@ tasks:
       - task: internal-build
         vars:
           BUILD_OUTPUT: "{{.BUILD_OUTPUT}}"
+          GOOS: "{{ default OS }}"
+          GOARCH: "{{ default ARCH }}"
 
   install:
     run: once
-    cmd: go install -ldflags='{{ .BUILD_LDFLAGS }}'
+    cmd: go install -trimpath -ldflags='{{ .BUILD_LDFLAGS }}'
 
   tidy:
     cmd:
