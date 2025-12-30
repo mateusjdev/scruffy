@@ -3,8 +3,8 @@ package cmd
 import (
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
+	"mateusjdev/scruffy/cmd/mimetype"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/spf13/cobra"
 )
 
@@ -16,13 +16,10 @@ var mimetypeCmd = &cobra.Command{
 	Use:   "mimetype",
 	Short: "Check the mimetype of a file",
 	Run: func(cmd *cobra.Command, args []string) {
-		tmpPath, err := cfs.ValidatePath(mimeInputPath, skipGitCheck, cfs.PathIsFile)
+		tmpPath, err := cfs.ValidatePath(mimeInputPath, true, cfs.PathIsFile, cfs.PathIsDirectory)
 		clog.CheckIfError(err)
-		mtype, err := mimetype.DetectFile(tmpPath.GetPath())
-		if err != nil {
-			panic("ERROR")
-		}
-		clog.InfoSuccessf("%s %s", mtype.String(), mtype.Extension())
+		clog.InfoSuccessf(tmpPath.GetPath())
+		mimetype.CheckMimeType(*tmpPath)
 	},
 }
 
