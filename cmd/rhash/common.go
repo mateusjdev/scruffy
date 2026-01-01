@@ -22,8 +22,6 @@ const (
 	HashAlgorithmSHA1    string = "sha1"
 	HashAlgorithmSHA256  string = "sha256"
 	HashAlgorithmSHA512  string = "sha512"
-
-	HashAlgorithmFuzzy string = "fuzzy"
 )
 
 type MachineOptions struct {

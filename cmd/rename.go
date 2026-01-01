@@ -21,6 +21,7 @@ var (
 	dryRun         bool
 	force          bool
 	hash           string
+	fuzzy          bool
 	recursive      bool
 	truncate       uint8
 	uppercase      bool
@@ -30,9 +31,10 @@ var (
 	currentWorkDir string
 )
 
-var rhashCmd = &cobra.Command{
-	Use:   "rhash [source]",
-	Short: "Rename files to their hash sum",
+var renameCmd = &cobra.Command{
+	Use:     "rename [source]",
+	Aliases: []string{"rhash"},
+	Short:   "Batch rename files.",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		// Check LogLevel (global-flags)
 		debug, _ := cmd.Flags().GetBool("debug")
@@ -70,7 +72,8 @@ var rhashCmd = &cobra.Command{
 	truncate: %d
 	inputPath: %s
 	outputPath: %s
-	hash: %s`, dryRun, silent, recursive, absolutePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash)
+	hash: %s
+	fuzzy: %t`, dryRun, silent, recursive, absolutePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash, fuzzy)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		clog.Debugf("Starting module::%s", cmd.Use)
@@ -131,9 +134,10 @@ var rhashCmd = &cobra.Command{
 		clog.CheckIfError(err)
 		currentWorkDir = cwd
 
-		if hash == rhash.HashAlgorithmFuzzy {
+		var machine rhash.RenameMachine
+		if fuzzy {
 			// FUZZY_MACHINE
-			fuzzyMachineOptions := rhash.FuzzyMachineOptions{
+			machine = rhash.FuzzyMachineOptions{
 				Uppercase: uppercase,
 				Truncate:  truncate,
 				// INFO: For file naming this (dryRun) will be random,
@@ -142,14 +146,11 @@ var rhashCmd = &cobra.Command{
 				AbsolutePath:   absolutePath,
 				CurrentWorkDir: currentWorkDir,
 			}
-
-			// PATH_WALK
-			rhash.EnqueuePath(fuzzyMachineOptions, recursive, inputPathInfo, outputPathInfo)
 		} else {
 			// HASH_MACHINE
 			hashAlgorithm, err := rhash.GetHashAlgorithm(hash, int(truncate))
 			clog.CheckIfError(err)
-			hashMachine := rhash.HashMachine{
+			machine = rhash.HashMachine{
 				Machine: hashAlgorithm,
 				Options: rhash.HashMachineOptions{
 					Uppercase:      uppercase,
@@ -159,48 +160,49 @@ var rhashCmd = &cobra.Command{
 					CurrentWorkDir: currentWorkDir,
 				},
 			}
-
-			// PATH_WALK
-			rhash.EnqueuePath(hashMachine, recursive, inputPathInfo, outputPathInfo)
 		}
+		// PATH_WALK
+		rhash.EnqueuePath(machine, recursive, inputPathInfo, outputPathInfo)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(rhashCmd)
+	rootCmd.AddCommand(renameCmd)
 
 	// TODO(1): Add https://github.com/spf13/viper for configuration
 	// TODO(1a): Use XDG Base Directory Specification
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scruffy.yaml)")
 
-	rhashCmd.Flags().StringVarP(&hash, "hash", "H", "blake3", "hash that will be used: [md5/blake3/blake2b/sha1/sha256/sha512/fuzzy]")
+	renameCmd.Flags().StringVarP(&hash, "hash", "H", "blake3", "Use file hash [md5/blake3/blake2b/sha1/sha256/sha512]")
+	renameCmd.Flags().BoolVarP(&fuzzy, "random", "R", false, "Use random characters.")
+	renameCmd.MarkFlagsMutuallyExclusive("hash", "random")
 
 	// TODO(2) Add multiple inputs (Ex: --input $1 -i $2 -i $3)
 	// TODO(2): Drop -i and use 'scruffy rhash $i $2 $3'
-	rhashCmd.Flags().StringVarP(&inputPath, "input", "i", "./", "Path to DIR/FILE which will be hashed")
+	renameCmd.Flags().StringVarP(&inputPath, "input", "i", "./", "Path to DIR/FILE which will be hashed")
 
 	// INFO: If --output/defaultOutputPath is not declared, it will be the same as --input/defaultInputPath
-	rhashCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Location were hashed files will be stored")
+	renameCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Location were hashed files will be stored")
 
-	rhashCmd.Flags().BoolVarP(&absolutePath, "absolute-path", "A", false, "Print absolute paths relative when logging")
+	renameCmd.Flags().BoolVarP(&absolutePath, "absolute-path", "A", false, "Print absolute paths relative when logging")
 
-	rhashCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Don't rename files")
+	renameCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Don't rename files")
 
-	rhashCmd.Flags().BoolVarP(&uppercase, "uppercase", "U", false, "Convert characters to UPPERCASE")
+	renameCmd.Flags().BoolVarP(&uppercase, "uppercase", "U", false, "Convert characters to UPPERCASE")
 
 	// Ignore git checks
-	rhashCmd.Flags().BoolVarP(&force, "force", "F", false, "Ignore git checks")
+	renameCmd.Flags().BoolVarP(&force, "force", "F", false, "Ignore git checks")
 
-	// Truncate filename, max value is 256(uint8)
-	rhashCmd.Flags().Uint8VarP(&truncate, "truncate", "t", 32, "Truncate filename (Beetween 8 and 128)")
+	// recommended max filename is 256
+	renameCmd.Flags().Uint8VarP(&truncate, "truncate", "t", 32, "Truncate filename (Beetween 8 and 128)")
 
-	rhashCmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recurse DIRs, when enabled, will not accept a target directory")
+	renameCmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recurse DIRs, when enabled, will not accept a target directory")
 
 	// TODO(10): Recreate folder structure on destination Dir
 	// For now --recursive and --output will be mutually exclusive
 	// If --output is declared, rhash will not recurse into --input folders
 	// If --recursive is declared, rhash will not accept another folder as output
-	rhashCmd.MarkFlagsMutuallyExclusive("recursive", "output")
+	renameCmd.MarkFlagsMutuallyExclusive("recursive", "output")
 
 	// TODO: rootCmd.silent x rhashCmd.*
 	// Why dry-run if nothing will be shown on screen?
@@ -208,6 +210,6 @@ func init() {
 	// Why abreviate paths if nothing will be shown on screen?
 	// rhashCmd.MarkFlagsMutuallyExclusive("silent", "abbreviate-path")
 
-	rhashCmd.MarkFlagFilename("input")
-	rhashCmd.MarkFlagDirname("output")
+	renameCmd.MarkFlagFilename("input")
+	renameCmd.MarkFlagDirname("output")
 }
