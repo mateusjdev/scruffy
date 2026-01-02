@@ -18,7 +18,7 @@
 - [X] TODO(5): Work on verbose flag
 - [X] TODO(6): Work on uppercase flag
 - [X] TODO(7): Work on recursive flag
-- [X] TODO(8): Work on lenght/truncate flag
+- [X] TODO(8): Work on length/truncate flag
 - [X] TODO(8a): Check MAX_PATH on windows
 - [X] TODO(12): Check if go-git need git binary, if yes, drop module
 - [X] TODO(13): Create a HashMachine interface, add Options

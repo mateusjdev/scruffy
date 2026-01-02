@@ -27,26 +27,26 @@ var (
 	ErrUnknownHashMethod = errors.New("hash method not valid")
 )
 
-// TODO(8): Work on lenght/truncate flag
-// Chosse between "--hash SHA224 ..." or "--hash SHA2 --lenght 224"
-func GetHashAlgorithm(hash string, lenght int) (hash.Hash, error) {
+// TODO(8): Work on length/truncate flag
+// Chosse between "--hash SHA224 ..." or "--hash SHA2 --length 224"
+func GetHashAlgorithm(hash string, length int) (hash.Hash, error) {
 	switch hash {
 	case HashAlgorithmBlake2b:
-		// lenght: fixed_256_bits (256, 384, 512)
+		// length: fixed_256_bits (256, 384, 512)
 		return crypto.BLAKE2b_256.New(), nil
 	case HashAlgorithmBlake3:
-		return blake3.New(lenght/2, nil), nil
+		return blake3.New(length/2, nil), nil
 	case HashAlgorithmMD5:
-		// lenght: fixed_128_bits
+		// length: fixed_128_bits
 		return crypto.MD5.New(), nil
 	case HashAlgorithmSHA1:
-		// lenght: fixed_160_bits
+		// length: fixed_160_bits
 		return crypto.SHA1.New(), nil
 	case HashAlgorithmSHA256:
-		// lenght: fixed_256_bits
+		// length: fixed_256_bits
 		return crypto.SHA256.New(), nil
 	case HashAlgorithmSHA512:
-		// lenght: fixed_512_bits
+		// length: fixed_512_bits
 		return crypto.SHA512.New(), nil
 	}
 	return nil, ErrUnknownHashMethod
@@ -144,7 +144,6 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 				sourceFileInfo,
 				destinationFileInfo,
 			)
-
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) {
 			ReportOperation(
