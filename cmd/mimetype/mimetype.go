@@ -1,6 +1,7 @@
 package mimetype
 
 import (
+	"fmt"
 	"io/fs"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
@@ -41,12 +42,11 @@ func checkMimeType(path cfs.CustomFileInfo, ignoreOk bool) error {
 func CheckMimeType(inputPathInfo cfs.CustomFileInfo, ignoreOk bool) {
 	if inputPathInfo.GetPathType() == cfs.PathIsFile {
 		err := checkMimeType(inputPathInfo, ignoreOk)
-		clog.CheckIfError(err)
+		clog.PanicIf(err)
 	}
 
 	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
-		clog.Errorf("Not a valid file or directory")
-		clog.ExitBecause(clog.ErrCodeGeneric)
+		clog.PanicReturning(fmt.Errorf("Not a valid file or directory"), clog.ErrCodeGeneric)
 	}
 
 	filepath.WalkDir(inputPathInfo.GetPath(), func(path string, di fs.DirEntry, err error) error {
@@ -60,7 +60,7 @@ func CheckMimeType(inputPathInfo cfs.CustomFileInfo, ignoreOk bool) {
 			}
 
 			recursePathInfo, err := cfs.GetValidatedPath(path)
-			clog.CheckIfError(err)
+			clog.PanicIf(err)
 			CheckMimeType(recursePathInfo, ignoreOk)
 
 			// Skip walk(dir) from --recuse anyway, this helps ensure destination folder will be respected
@@ -68,11 +68,11 @@ func CheckMimeType(inputPathInfo cfs.CustomFileInfo, ignoreOk bool) {
 		}
 
 		fileInfo, err := cfs.GetValidatedPath(path)
-		clog.CheckIfError(err)
+		clog.PanicIf(err)
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())
 		err = checkMimeType(fileInfo, ignoreOk)
-		clog.CheckIfError(err)
+		clog.PanicIf(err)
 		return nil
 	})
 

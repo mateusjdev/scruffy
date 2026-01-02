@@ -58,7 +58,7 @@ func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string,
 	}
 
 	file, err := os.Open(fileInfo.GetPath())
-	clog.CheckIfError(err)
+	clog.PanicIf(err)
 	defer file.Close()
 	if _, err := io.Copy(hashMachine.Machine, file); err != nil {
 		return "", err
@@ -82,7 +82,7 @@ func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string,
 func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo) error {
 	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
 
-	clog.CheckIfError(err)
+	clog.PanicIf(err)
 
 	extension := filepath.Ext(sourceFileInfo.GetPath())
 	destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)

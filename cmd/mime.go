@@ -18,7 +18,7 @@ var mimetypeCmd = &cobra.Command{
 	Short: "Check the mimetype of a file",
 	Run: func(cmd *cobra.Command, args []string) {
 		tmpPath, err := cfs.ValidatePath(mimeInputPath, skipGitCheck, cfs.PathIsFile, cfs.PathIsDirectory)
-		clog.CheckIfError(err)
+		clog.PanicIf(err)
 		mimetype.CheckMimeType(*tmpPath, ignoreOk)
 	},
 }

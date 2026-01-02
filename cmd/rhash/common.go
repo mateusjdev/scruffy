@@ -1,6 +1,7 @@
 package rhash
 
 import (
+	"fmt"
 	"io/fs"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
@@ -89,8 +90,7 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 	}
 
 	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
-		clog.Errorf("Not a valid file or directory")
-		clog.ExitBecause(clog.ErrCodeGeneric)
+		clog.PanicReturning(fmt.Errorf("Not a valid file or directory"), clog.ErrCodeGeneric)
 	}
 
 	// TODO(21): Check WalkDir error/return
@@ -106,7 +106,7 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 
 			if recursive {
 				recursePathInfo, err := cfs.GetValidatedPath(path)
-				clog.CheckIfError(err)
+				clog.PanicIf(err)
 
 				EnqueuePath(
 					renameMachine,
@@ -121,7 +121,7 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 		}
 
 		fileInfo, err := cfs.GetValidatedPath(path)
-		clog.CheckIfError(err)
+		clog.PanicIf(err)
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())
 		return renameMachine.workOnFile(fileInfo, outputPathInfo)

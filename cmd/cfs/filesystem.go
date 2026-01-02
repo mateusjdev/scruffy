@@ -2,6 +2,7 @@ package cfs
 
 import (
 	"errors"
+	"fmt"
 	"mateusjdev/scruffy/cmd/clog"
 	"os"
 	"path/filepath"
@@ -55,7 +56,7 @@ func SafeRename(source string, destination string) error {
 
 func GetValidatedPath(path string) (CustomFileInfo, error) {
 	path, err := filepath.Abs(path)
-	clog.CheckIfError(err)
+	clog.PanicIf(err)
 	stat, err := os.Stat(path)
 
 	if err != nil {
@@ -96,17 +97,15 @@ func IsGitRepo(path string) bool {
 
 func ValidatePath(path string, skipGitCheck bool, validPathType ...PathType) (*CustomFileInfo, error) {
 	if path == "" {
-		clog.Errorf("path is empty or invalid")
-		clog.ExitBecause(clog.ErrUserGeneric)
+		clog.PanicReturning(fmt.Errorf("path is empty or invalid"), clog.ErrUserGeneric)
 	}
 
 	if len(validPathType) == 0 {
-		clog.Errorf("Couldn't validate path")
-		clog.ExitBecause(clog.ErrCodeGeneric)
+		clog.PanicReturning(fmt.Errorf("Couldn't validate path"), clog.ErrCodeGeneric)
 	}
 
 	tmpPath, err := GetValidatedPath(path)
-	clog.CheckIfError(err)
+	clog.PanicIf(err)
 
 	isValid := false
 	for _, pathType := range validPathType {
@@ -115,15 +114,13 @@ func ValidatePath(path string, skipGitCheck bool, validPathType ...PathType) (*C
 		}
 	}
 	if !isValid {
-		clog.Errorf("Path %s is not a valid file or a directory\n", tmpPath)
-		clog.ExitBecause(clog.ErrUserInput)
+		clog.PanicReturning(fmt.Errorf("Path %s is not a valid file or a directory\n", tmpPath), clog.ErrUserInput)
 		return nil, nil
 	}
 
 	if IsGitRepo(tmpPath.GetPath()) {
 		if !skipGitCheck {
-			clog.Errorf("%s is in a git repo", tmpPath.GetPath())
-			clog.ExitBecause(clog.ErrUserGeneric)
+			clog.PanicReturning(fmt.Errorf("%s is in a git repo", tmpPath.GetPath()), clog.ErrUserGeneric)
 		}
 		clog.Infof("%s is in a git repo", tmpPath.GetPath())
 	}

@@ -10,13 +10,13 @@ const (
 	ErrUserInput
 )
 
-func ExitBecause(reason exitCode) {
+func PanicReturning(err error, reason exitCode) {
 	os.Exit(int(reason))
 }
 
-func CheckIfError(err error) {
+func PanicIf(err error) {
 	if err != nil {
 		Errorf("%s\n", err)
-		ExitBecause(ErrCodeGeneric)
+		os.Exit(int(ErrCodeGeneric))
 	}
 }
