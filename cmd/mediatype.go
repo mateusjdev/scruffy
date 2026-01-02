@@ -23,6 +23,7 @@ var mediatypeCmd = &cobra.Command{
 		clog.PanicIf(err)
 
 		mimetype.CheckPath(inputPathInfo, ignoreExtMatch)
+		clog.PanicIf(err)
 	},
 }
 

@@ -1,7 +1,7 @@
 package rhash
 
 import (
-	"fmt"
+	"errors"
 	"io/fs"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
@@ -59,12 +59,10 @@ func ReportOperation(options MachineOptions, operation Operation, source *cfs.Pa
 		}
 
 		if cfs.IsSameVolume(options.CurrentWorkDir, destinationPath) {
-			destinationPath, err = filepath.Rel(options.CurrentWorkDir, destinationPath)
+			relativePath, err := filepath.Rel(options.CurrentWorkDir, destinationPath)
 			if err != nil {
-				destinationPath = destinationPath
+				destinationPath = relativePath
 			}
-		} else {
-			destinationPath = destinationPath
 		}
 	}
 
@@ -80,7 +78,6 @@ func ReportOperation(options MachineOptions, operation Operation, source *cfs.Pa
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
 func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, outputPathInfo *cfs.PathInfo) error {
-
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path())
 
 	if inputPathInfo.IsRegularFile() {
@@ -89,11 +86,11 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 	}
 
 	if !inputPathInfo.IsDir() {
-		clog.PanicReturning(fmt.Errorf("Not a valid file or directory"), clog.ErrCodeGeneric)
+		return errors.New("Not a valid file or directory")
 	}
 
 	// TODO(21): Check WalkDir error/return
-	filepath.WalkDir(inputPathInfo.Path(), func(path string, di fs.DirEntry, err error) error {
+	return filepath.WalkDir(inputPathInfo.Path(), func(path string, di fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -105,7 +102,9 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 
 			if recursive {
 				recursePathInfo, err := cfs.StatPath(path)
-				clog.PanicIf(err)
+				if err != nil {
+					return err
+				}
 
 				EnqueuePath(
 					renameMachine,
@@ -120,11 +119,11 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 		}
 
 		fileInfo, err := cfs.StatPath(path)
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.Path())
 		return renameMachine.workOnFile(fileInfo, outputPathInfo)
 	})
-
-	return nil
 }

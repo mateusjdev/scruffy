@@ -1,7 +1,7 @@
 package mimetype
 
 import (
-	"fmt"
+	"errors"
 	"io/fs"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
@@ -39,17 +39,16 @@ func checkFile(path *cfs.PathInfo, ignoreOk bool) error {
 	return nil
 }
 
-func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) {
+func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) error {
 	if inputPathInfo.IsRegularFile() {
-		err := checkFile(inputPathInfo, ignoreOk)
-		clog.PanicIf(err)
+		return checkFile(inputPathInfo, ignoreOk)
 	}
 
 	if !inputPathInfo.IsDir() {
-		clog.PanicReturning(fmt.Errorf("Not a valid file or directory"), clog.ErrCodeGeneric)
+		return errors.New("Not a valid file or directory")
 	}
 
-	filepath.WalkDir(inputPathInfo.Path(), func(path string, di fs.DirEntry, err error) error {
+	return filepath.WalkDir(inputPathInfo.Path(), func(path string, di fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -60,7 +59,9 @@ func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) {
 			}
 
 			recursePathInfo, err := cfs.StatPath(path)
-			clog.PanicIf(err)
+			if err != nil {
+				return err
+			}
 			CheckPath(recursePathInfo, ignoreOk)
 
 			// Skip walk(dir) from --recuse anyway, this helps ensure destination folder will be respected
@@ -68,12 +69,11 @@ func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) {
 		}
 
 		fileInfo, err := cfs.StatPath(path)
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.Path())
-		err = checkFile(fileInfo, ignoreOk)
-		clog.PanicIf(err)
-		return nil
+		return checkFile(fileInfo, ignoreOk)
 	})
-
 }

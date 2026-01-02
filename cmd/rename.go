@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
 	"mateusjdev/scruffy/cmd/rhash"
@@ -50,11 +49,11 @@ var renameCmd = &cobra.Command{
 		// Check LogLevel (global-flags)
 
 		if truncate < ARGS_MIN_TRUNCATE {
-			clog.PanicReturning(fmt.Errorf("--truncate is very low, choose >= %d", ARGS_MIN_TRUNCATE), clog.ErrUserInput)
+			clog.Panicf("--truncate is very low, choose >= %d", ARGS_MIN_TRUNCATE)
 		}
 
 		if truncate > ARGS_MAX_TRUNCATE {
-			clog.PanicReturning(fmt.Errorf("--truncate is very high, choose <= %d", ARGS_MAX_TRUNCATE), clog.ErrUserInput)
+			clog.Panicf("--truncate is very high, choose <= %d", ARGS_MAX_TRUNCATE)
 		}
 
 		skipGitCheck = force || debug || dryRun
@@ -79,7 +78,7 @@ var renameCmd = &cobra.Command{
 		clog.Debugf("Starting module::%s", cmd.Use)
 
 		if inputPath == "" {
-			clog.PanicReturning(fmt.Errorf("--input is empty or invalid"), clog.ErrUserGeneric)
+			clog.Panicf("--input is empty or invalid")
 		}
 
 		inputPathInfo, err := cfs.StatPath(inputPath)
@@ -87,13 +86,13 @@ var renameCmd = &cobra.Command{
 		// TODO: Wrap if os.ErrNotExist
 		/*
 			if inputPathInfo.GetPathType() == cfs.PathIsNonExistent {
-				clog.PanicReturning(fmt.Errorf("Source path %s is not a valid file or a directory\n", inputPath), clog.ErrUserInput)
+				clog.Panicf("Source path %s is not a valid file or a directory\n", inputPath)
 			}
 		*/
 
 		if outputPath == "" {
 			if cmd.Flags().Lookup("output").Changed {
-				clog.PanicReturning(fmt.Errorf("--output is empty or invalid"), clog.ErrUserInput)
+				clog.Panicf("--output is empty or invalid")
 			}
 
 			if inputPathInfo.IsRegularFile() {
@@ -107,13 +106,13 @@ var renameCmd = &cobra.Command{
 		outputPathInfo, err := cfs.StatPath(outputPath)
 		clog.PanicIf(err)
 		if !outputPathInfo.IsDir() {
-			clog.PanicReturning(fmt.Errorf("Destination folder \"%s\" is not a valid directory\n", outputPath), clog.ErrUserInput)
+			clog.Panicf("Destination folder \"%s\" is not a valid directory\n", outputPath)
 		}
 
 		isInGitRepo, err := cfs.IsPathInGitRepo(inputPathInfo)
 		if isInGitRepo {
 			if !skipGitCheck {
-				clog.PanicReturning(fmt.Errorf("%s is in a git repo", inputPathInfo.Path()), clog.ErrUserGeneric)
+				clog.Panicf("%s is in a git repo", inputPathInfo.Path())
 			}
 			clog.Infof("%s is in a git repo", inputPathInfo.Path())
 		}
@@ -123,7 +122,7 @@ var renameCmd = &cobra.Command{
 			clog.PanicIf(err)
 			if isInGitRepo {
 				if !skipGitCheck {
-					clog.PanicReturning(fmt.Errorf("%s is in a git repo", outputPathInfo.Path()), clog.ErrUserGeneric)
+					clog.Panicf("%s is in a git repo", outputPathInfo.Path())
 				}
 				clog.Infof("%s is in a git repo", outputPathInfo.Path())
 			}

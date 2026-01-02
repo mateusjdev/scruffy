@@ -8,7 +8,6 @@ import (
 	"hash"
 	"io"
 	"mateusjdev/scruffy/cmd/cfs"
-	"mateusjdev/scruffy/cmd/clog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,7 +57,10 @@ func (hashMachine HashMachine) getChecksum(fileInfo *cfs.PathInfo) (string, erro
 	}
 
 	file, err := os.Open(fileInfo.Path())
-	clog.PanicIf(err)
+	if err != nil {
+		return "", err
+	}
+
 	defer file.Close()
 	if _, err := io.Copy(hashMachine.Machine, file); err != nil {
 		return "", err
@@ -81,8 +83,9 @@ func (hashMachine HashMachine) getChecksum(fileInfo *cfs.PathInfo) (string, erro
 
 func (hashMachine HashMachine) workOnFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
 	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
-
-	clog.PanicIf(err)
+	if err != nil {
+		return err
+	}
 
 	extension := filepath.Ext(sourceFileInfo.Path())
 	destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)

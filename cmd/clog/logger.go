@@ -76,6 +76,18 @@ func Errorf(msg string, args ...any) {
 	levelPrintfErr(LevelError, printError+msg, args...)
 }
 
+func Panicf(msg string, args ...any) {
+	levelPrintfErr(LevelError, printError+msg, args...)
+	os.Exit(1)
+}
+
+func PanicIf(err error) {
+	if err != nil {
+		Errorf("%s\n", err)
+		os.Exit(1)
+	}
+}
+
 func SetLogLevel(level logLevel) {
 	logLoggerLevel = level
 }
