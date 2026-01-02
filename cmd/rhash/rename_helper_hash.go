@@ -52,12 +52,12 @@ func GetHashAlgorithm(hash string, length int) (hash.Hash, error) {
 	return nil, ErrUnknownHashMethod
 }
 
-func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string, error) {
-	if fileInfo.GetPathType() != cfs.PathIsFile {
+func (hashMachine HashMachine) getChecksum(fileInfo *cfs.PathInfo) (string, error) {
+	if !fileInfo.IsRegularFile() {
 		return "", errors.New("trying to hash a non file")
 	}
 
-	file, err := os.Open(fileInfo.GetPath())
+	file, err := os.Open(fileInfo.Path())
 	clog.PanicIf(err)
 	defer file.Close()
 	if _, err := io.Copy(hashMachine.Machine, file); err != nil {
@@ -79,43 +79,41 @@ func (hashMachine HashMachine) getChecksum(fileInfo cfs.CustomFileInfo) (string,
 	return hashString, nil
 }
 
-func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo) error {
+func (hashMachine HashMachine) workOnFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
 	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
 
 	clog.PanicIf(err)
 
-	extension := filepath.Ext(sourceFileInfo.GetPath())
-	destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
-
-	destinationFileInfo := cfs.GetUnvalidatedPath(destination, cfs.PathIsFile)
+	extension := filepath.Ext(sourceFileInfo.Path())
+	destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 	if hashMachine.Options.DryRun {
-		if sourceFileInfo.GetPath() == destination {
+		if sourceFileInfo.Path() == destination {
 			ReportOperation(
 				MachineOptions(hashMachine.Options),
 				OperationSameFile,
 				sourceFileInfo,
-				destinationFileInfo,
+				destination,
 			)
 		} else {
 			ReportOperation(
 				MachineOptions(hashMachine.Options),
 				OperationDryRun,
 				sourceFileInfo,
-				destinationFileInfo,
+				destination,
 			)
 		}
 		return nil
 	}
 
 	// TODO(16): Check if has permission to move to destination
-	err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
+	err = cfs.SafeRename(sourceFileInfo, destination)
 	if err == nil {
 		ReportOperation(
 			MachineOptions(hashMachine.Options),
 			OperationRenamed,
 			sourceFileInfo,
-			destinationFileInfo,
+			destination,
 		)
 		return nil
 	} else if errors.Is(err, cfs.ErrSameFile) {
@@ -123,7 +121,7 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 			MachineOptions(hashMachine.Options),
 			OperationSameFile,
 			sourceFileInfo,
-			destinationFileInfo,
+			destination,
 		)
 		return nil
 	} else if !errors.Is(err, cfs.ErrFileExists) {
@@ -133,16 +131,15 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 	counter := 1
 	for {
 		newFileName := fmt.Sprintf("%s_%d%s", fileHash, counter, extension)
-		destination := filepath.Join(destinationDirInfo.GetPath(), newFileName)
-		destinationFileInfo = cfs.GetUnvalidatedPath(destination, cfs.PathIsFile)
+		destination := filepath.Join(destinationDirInfo.Path(), newFileName)
 
-		err = cfs.SafeRename(sourceFileInfo.GetPath(), destination)
+		err = cfs.SafeRename(sourceFileInfo, destination)
 		if err == nil {
 			ReportOperation(
 				MachineOptions(hashMachine.Options),
 				OperationRenamed,
 				sourceFileInfo,
-				destinationFileInfo,
+				destination,
 			)
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) {
@@ -150,7 +147,7 @@ func (hashMachine HashMachine) workOnFile(sourceFileInfo cfs.CustomFileInfo, des
 				MachineOptions(hashMachine.Options),
 				OperationSameFile,
 				sourceFileInfo,
-				destinationFileInfo,
+				destination,
 			)
 			return nil
 		} else if !errors.Is(err, cfs.ErrFileExists) {

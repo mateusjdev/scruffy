@@ -20,7 +20,7 @@ var (
 
 type FuzzyMachineOptions MachineOptions
 
-func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ cfs.CustomFileInfo) (string, error) {
+func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ *cfs.PathInfo) (string, error) {
 	b := make([]byte, fuzzyMachineOptions.Truncate)
 	for i := range b {
 		b[i] = charset[seed.Intn(charsetLen)]
@@ -31,22 +31,20 @@ func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ cfs.CustomFileInfo)
 	return string(b), nil
 }
 
-func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.CustomFileInfo, destinationDirInfo cfs.CustomFileInfo) error {
-	extension := filepath.Ext(sourceFileInfo.GetPath())
+func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
+	extension := filepath.Ext(sourceFileInfo.Path())
 
 	// If fails to rename, just generate a new name
 
 	if fuzzyMachineOptions.DryRun {
-		fileHash, _ := fuzzyMachineOptions.getChecksum(sourceFileInfo)
-		destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
-
-		destinationFileInfo := cfs.GetUnvalidatedPath(destination, cfs.PathIsFile)
+		fileHash, _ := fuzzyMachineOptions.getChecksum(nil)
+		destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 		ReportOperation(
 			MachineOptions(fuzzyMachineOptions),
 			OperationDryRun,
 			sourceFileInfo,
-			destinationFileInfo,
+			destination,
 		)
 
 		return nil
@@ -54,16 +52,16 @@ func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo cfs.Cus
 
 	for {
 		fileHash, _ := fuzzyMachineOptions.getChecksum(sourceFileInfo)
-		destination := filepath.Join(destinationDirInfo.GetPath(), fileHash+extension)
+		destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 		// TODO(16): Check if has permission to move to destination
-		err := cfs.SafeRename(sourceFileInfo.GetPath(), destination)
+		err := cfs.SafeRename(sourceFileInfo, destination)
 		if err == nil {
 			ReportOperation(
 				MachineOptions(fuzzyMachineOptions),
 				OperationRenamed,
 				sourceFileInfo,
-				cfs.GetUnvalidatedPath(destination, cfs.PathIsFile),
+				destination,
 			)
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) || errors.Is(err, cfs.ErrFileExists) {

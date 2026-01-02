@@ -82,47 +82,55 @@ var renameCmd = &cobra.Command{
 			clog.PanicReturning(fmt.Errorf("--input is empty or invalid"), clog.ErrUserGeneric)
 		}
 
-		inputPathInfo, err := cfs.GetValidatedPath(inputPath)
+		inputPathInfo, err := cfs.StatPath(inputPath)
 		clog.PanicIf(err)
-		if inputPathInfo.GetPathType() == cfs.PathIsNonExistent {
-			clog.PanicReturning(fmt.Errorf("Source path %s is not a valid file or a directory\n", inputPath), clog.ErrUserInput)
-		}
+		// TODO: Wrap if os.ErrNotExist
+		/*
+			if inputPathInfo.GetPathType() == cfs.PathIsNonExistent {
+				clog.PanicReturning(fmt.Errorf("Source path %s is not a valid file or a directory\n", inputPath), clog.ErrUserInput)
+			}
+		*/
 
 		if outputPath == "" {
 			if cmd.Flags().Lookup("output").Changed {
 				clog.PanicReturning(fmt.Errorf("--output is empty or invalid"), clog.ErrUserInput)
 			}
 
-			if inputPathInfo.GetPathType() == cfs.PathIsFile {
-				outputPath = filepath.Dir(inputPathInfo.GetPath())
+			if inputPathInfo.IsRegularFile() {
+				outputPath = filepath.Dir(inputPathInfo.Path())
 			} else {
-				outputPath = inputPathInfo.GetPath()
+				outputPath = inputPathInfo.Path()
 			}
 		}
 
 		// TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
-		outputPathInfo, err := cfs.GetValidatedPath(outputPath)
+		outputPathInfo, err := cfs.StatPath(outputPath)
 		clog.PanicIf(err)
-		if outputPathInfo.GetPathType() != cfs.PathIsDirectory {
+		if !outputPathInfo.IsDir() {
 			clog.PanicReturning(fmt.Errorf("Destination folder \"%s\" is not a valid directory\n", outputPath), clog.ErrUserInput)
 		}
 
-		if cfs.IsGitRepo(inputPathInfo.GetPath()) {
+		isInGitRepo, err := cfs.IsPathInGitRepo(inputPathInfo)
+		if isInGitRepo {
 			if !skipGitCheck {
-				clog.PanicReturning(fmt.Errorf("%s is in a git repo", inputPathInfo.GetPath()), clog.ErrUserGeneric)
+				clog.PanicReturning(fmt.Errorf("%s is in a git repo", inputPathInfo.Path()), clog.ErrUserGeneric)
 			}
-			clog.Infof("%s is in a git repo", inputPathInfo.GetPath())
+			clog.Infof("%s is in a git repo", inputPathInfo.Path())
 		}
 
-		if inputPathInfo.GetPath() != outputPathInfo.GetPath() && cfs.IsGitRepo(outputPathInfo.GetPath()) {
-			if !skipGitCheck {
-				clog.PanicReturning(fmt.Errorf("%s is in a git repo", outputPathInfo.GetPath()), clog.ErrUserGeneric)
+		if inputPathInfo.Path() != outputPathInfo.Path() {
+			isInGitRepo, err := cfs.IsPathInGitRepo(outputPathInfo)
+			clog.PanicIf(err)
+			if isInGitRepo {
+				if !skipGitCheck {
+					clog.PanicReturning(fmt.Errorf("%s is in a git repo", outputPathInfo.Path()), clog.ErrUserGeneric)
+				}
+				clog.Infof("%s is in a git repo", outputPathInfo.Path())
 			}
-			clog.Infof("%s is in a git repo", outputPathInfo.GetPath())
 		}
 
-		clog.Debugf("inputPathInfo.GetPath(): %s", inputPathInfo.GetPath())
-		clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.GetPath())
+		clog.Debugf("inputPathInfo.GetPath(): %s", inputPathInfo.Path())
+		clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.Path())
 
 		cwd, err := os.Getwd()
 		clog.PanicIf(err)

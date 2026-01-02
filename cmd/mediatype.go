@@ -16,13 +16,13 @@ var mediatypeCmd = &cobra.Command{
 		inputPath, err := cmd.Flags().GetString("input")
 		clog.PanicIf(err)
 
-		fileReference, err := cfs.ValidatePath(inputPath, skipGitCheck)
+		inputPathInfo, err := cfs.StatPath(inputPath)
 		clog.PanicIf(err)
 
 		ignoreExtMatch, err := cmd.Flags().GetBool("ignore-ok")
 		clog.PanicIf(err)
 
-		mimetype.CheckPath(*fileReference, ignoreExtMatch)
+		mimetype.CheckPath(inputPathInfo, ignoreExtMatch)
 	},
 }
 

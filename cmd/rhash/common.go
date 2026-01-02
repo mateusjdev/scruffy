@@ -34,38 +34,37 @@ type MachineOptions struct {
 }
 
 type RenameHelper interface {
-	workOnFile(cfs.CustomFileInfo, cfs.CustomFileInfo) error
-	getChecksum(cfs.CustomFileInfo) (string, error)
+	workOnFile(*cfs.PathInfo, *cfs.PathInfo) error
+	getChecksum(*cfs.PathInfo) (string, error)
 }
 
 type RenameMachine interface {
 	RenameHelper
 }
 
-func ReportOperation(options MachineOptions, operation Operation, source, destination cfs.CustomFileInfo) {
-	var fSource, fDestination string
+func ReportOperation(options MachineOptions, operation Operation, source *cfs.PathInfo, destinationPath string) {
+	var fSource string
 	// TODO: parse isSameVolume on rhash/parse.go (before)
 	if options.AbsolutePath {
-		fSource = source.GetPath()
-		fDestination = destination.GetPath()
+		fSource = source.Path()
 	} else {
 		var err error
-		if cfs.IsSameVolume(options.CurrentWorkDir, source.GetPath()) {
-			fSource, err = filepath.Rel(options.CurrentWorkDir, source.GetPath())
+		if cfs.IsSameVolume(options.CurrentWorkDir, source.Path()) {
+			fSource, err = filepath.Rel(options.CurrentWorkDir, source.Path())
 			if err != nil {
-				fSource = source.GetPath()
+				fSource = source.Path()
 			}
 		} else {
-			fSource = source.GetPath()
+			fSource = source.Path()
 		}
 
-		if cfs.IsSameVolume(options.CurrentWorkDir, destination.GetPath()) {
-			fDestination, err = filepath.Rel(options.CurrentWorkDir, destination.GetPath())
+		if cfs.IsSameVolume(options.CurrentWorkDir, destinationPath) {
+			destinationPath, err = filepath.Rel(options.CurrentWorkDir, destinationPath)
 			if err != nil {
-				fDestination = destination.GetPath()
+				destinationPath = destinationPath
 			}
 		} else {
-			fDestination = destination.GetPath()
+			destinationPath = destinationPath
 		}
 	}
 
@@ -73,39 +72,39 @@ func ReportOperation(options MachineOptions, operation Operation, source, destin
 	case OperationSameFile:
 		clog.Infof("file \"%s\" already match its hash", fSource)
 	case OperationRenamed:
-		clog.InfoSuccessf("\"%s\" -> %s", fSource, fDestination)
+		clog.InfoSuccessf("\"%s\" -> %s", fSource, destinationPath)
 	case OperationDryRun:
-		clog.Infof("\"%s\" -> \"%s\"", fSource, fDestination)
+		clog.Infof("\"%s\" -> \"%s\"", fSource, destinationPath)
 	}
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, outputPathInfo cfs.CustomFileInfo) error {
+func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, outputPathInfo *cfs.PathInfo) error {
 
-	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.GetPath())
+	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path())
 
-	if inputPathInfo.GetPathType() == cfs.PathIsFile {
-		clog.Debugf("Working on file \"%s\"", inputPathInfo.GetPath())
+	if inputPathInfo.IsRegularFile() {
+		clog.Debugf("Working on file \"%s\"", inputPathInfo.Path())
 		return renameMachine.workOnFile(inputPathInfo, outputPathInfo)
 	}
 
-	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
+	if !inputPathInfo.IsDir() {
 		clog.PanicReturning(fmt.Errorf("Not a valid file or directory"), clog.ErrCodeGeneric)
 	}
 
 	// TODO(21): Check WalkDir error/return
-	filepath.WalkDir(inputPathInfo.GetPath(), func(path string, di fs.DirEntry, err error) error {
+	filepath.WalkDir(inputPathInfo.Path(), func(path string, di fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if di.IsDir() {
-			if inputPathInfo.GetPath() == path {
+			if inputPathInfo.Path() == path {
 				return nil
 			}
 
 			if recursive {
-				recursePathInfo, err := cfs.GetValidatedPath(path)
+				recursePathInfo, err := cfs.StatPath(path)
 				clog.PanicIf(err)
 
 				EnqueuePath(
@@ -120,10 +119,10 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 			return filepath.SkipDir
 		}
 
-		fileInfo, err := cfs.GetValidatedPath(path)
+		fileInfo, err := cfs.StatPath(path)
 		clog.PanicIf(err)
 
-		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())
+		clog.Debugf("Working on file \"%s\"", fileInfo.Path())
 		return renameMachine.workOnFile(fileInfo, outputPathInfo)
 	})
 

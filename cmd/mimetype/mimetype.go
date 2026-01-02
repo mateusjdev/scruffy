@@ -10,22 +10,22 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 )
 
-func checkFile(path cfs.CustomFileInfo, ignoreOk bool) error {
-	clog.Debugf("Working on file \"%s\"", path.GetPath())
-	mtype, err := mimetype.DetectFile(path.GetPath())
+func checkFile(path *cfs.PathInfo, ignoreOk bool) error {
+	clog.Debugf("Working on file \"%s\"", path.Path())
+	mtype, err := mimetype.DetectFile(path.Path())
 	if err != nil {
 		return err
 	}
 
 	mime := mtype.String()
 	extension := mtype.Extension()
-	fullpath := path.GetPath()
+	fullpath := path.Path()
 	if extension == "" {
 		clog.Warningf("%s Unknown - %s", mime, fullpath)
 		return nil
 	}
 
-	extensionMatch := filepath.Ext(path.GetPath()) == mtype.Extension()
+	extensionMatch := filepath.Ext(path.Path()) == mtype.Extension()
 	if !extensionMatch {
 		clog.Warningf("%s %s - %s", mime, extension, fullpath)
 		return nil
@@ -39,27 +39,27 @@ func checkFile(path cfs.CustomFileInfo, ignoreOk bool) error {
 	return nil
 }
 
-func CheckPath(inputPathInfo cfs.CustomFileInfo, ignoreOk bool) {
-	if inputPathInfo.GetPathType() == cfs.PathIsFile {
+func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) {
+	if inputPathInfo.IsRegularFile() {
 		err := checkFile(inputPathInfo, ignoreOk)
 		clog.PanicIf(err)
 	}
 
-	if inputPathInfo.GetPathType() != cfs.PathIsDirectory {
+	if !inputPathInfo.IsDir() {
 		clog.PanicReturning(fmt.Errorf("Not a valid file or directory"), clog.ErrCodeGeneric)
 	}
 
-	filepath.WalkDir(inputPathInfo.GetPath(), func(path string, di fs.DirEntry, err error) error {
+	filepath.WalkDir(inputPathInfo.Path(), func(path string, di fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if di.IsDir() {
-			if inputPathInfo.GetPath() == path {
+			if inputPathInfo.Path() == path {
 				return nil
 			}
 
-			recursePathInfo, err := cfs.GetValidatedPath(path)
+			recursePathInfo, err := cfs.StatPath(path)
 			clog.PanicIf(err)
 			CheckPath(recursePathInfo, ignoreOk)
 
@@ -67,10 +67,10 @@ func CheckPath(inputPathInfo cfs.CustomFileInfo, ignoreOk bool) {
 			return filepath.SkipDir
 		}
 
-		fileInfo, err := cfs.GetValidatedPath(path)
+		fileInfo, err := cfs.StatPath(path)
 		clog.PanicIf(err)
 
-		clog.Debugf("Working on file \"%s\"", fileInfo.GetPath())
+		clog.Debugf("Working on file \"%s\"", fileInfo.Path())
 		err = checkFile(fileInfo, ignoreOk)
 		clog.PanicIf(err)
 		return nil
