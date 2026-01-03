@@ -9,11 +9,24 @@ import (
 	"strings"
 )
 
-type HashMachineOptions MachineOptions
+type hashRenamerOptions RenamerOptions
 
 type HashMachine struct {
 	Hasher  *hasher.Hasher
-	Options HashMachineOptions
+	Options hashRenamerOptions
+}
+
+func NewHashRenamer(hasher *hasher.Hasher, uppercase bool, truncate uint8, dryRun, displayAbsolutePath bool, currentWorkDir string) (Renamer, error) {
+	return HashMachine{
+		Hasher: hasher,
+		Options: hashRenamerOptions{
+			Uppercase:      uppercase,
+			Truncate:       truncate,
+			DryRun:         dryRun,
+			DisplayAbsPath: displayAbsolutePath,
+			CurrentWorkDir: currentWorkDir,
+		},
+	}, nil
 }
 
 func (hashMachine HashMachine) createFileName(fileInfo *cfs.PathInfo) (string, error) {
@@ -45,14 +58,14 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 	if hashMachine.Options.DryRun {
 		if sourceFileInfo.Path() == destination {
 			ReportOperation(
-				MachineOptions(hashMachine.Options),
+				RenamerOptions(hashMachine.Options),
 				OperationSameFile,
 				sourceFileInfo,
 				destination,
 			)
 		} else {
 			ReportOperation(
-				MachineOptions(hashMachine.Options),
+				RenamerOptions(hashMachine.Options),
 				OperationDryRun,
 				sourceFileInfo,
 				destination,
@@ -65,7 +78,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 	err = cfs.SafeRename(sourceFileInfo, destination)
 	if err == nil {
 		ReportOperation(
-			MachineOptions(hashMachine.Options),
+			RenamerOptions(hashMachine.Options),
 			OperationRenamed,
 			sourceFileInfo,
 			destination,
@@ -73,7 +86,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 		return nil
 	} else if errors.Is(err, cfs.ErrSameFile) {
 		ReportOperation(
-			MachineOptions(hashMachine.Options),
+			RenamerOptions(hashMachine.Options),
 			OperationSameFile,
 			sourceFileInfo,
 			destination,
@@ -91,7 +104,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 		err = cfs.SafeRename(sourceFileInfo, destination)
 		if err == nil {
 			ReportOperation(
-				MachineOptions(hashMachine.Options),
+				RenamerOptions(hashMachine.Options),
 				OperationRenamed,
 				sourceFileInfo,
 				destination,
@@ -99,7 +112,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 			return nil
 		} else if errors.Is(err, cfs.ErrSameFile) {
 			ReportOperation(
-				MachineOptions(hashMachine.Options),
+				RenamerOptions(hashMachine.Options),
 				OperationSameFile,
 				sourceFileInfo,
 				destination,

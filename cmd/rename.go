@@ -18,10 +18,10 @@ const (
 )
 
 var (
-	hash   string
-	random bool
+	hashAlgorithm string
+	random        bool
 
-	absolutePath   bool
+	displayAbsPath bool
 	dryRun         bool
 	force          bool
 	recursive      bool
@@ -30,7 +30,6 @@ var (
 	skipGitCheck   bool
 	inputPath      string
 	outputPath     string
-	currentWorkDir string
 )
 
 var renameCmd = &cobra.Command{
@@ -61,7 +60,7 @@ var renameCmd = &cobra.Command{
 		skipGitCheck = force || debug || dryRun
 
 		// TODO: validate hash here
-		hash = strings.ToLower(hash)
+		hashAlgorithm = strings.ToLower(hashAlgorithm)
 
 		clog.Debugf(`Args:
 	dry-run: %t
@@ -74,7 +73,7 @@ var renameCmd = &cobra.Command{
 	inputPath: %s
 	outputPath: %s
 	hash: %s
-	random: %t`, dryRun, silent, recursive, absolutePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash, random)
+	random: %t`, dryRun, silent, recursive, displayAbsPath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hashAlgorithm, random)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		clog.Debugf("Starting module::%s", cmd.Use)
@@ -133,39 +132,39 @@ var renameCmd = &cobra.Command{
 		clog.Debugf("inputPathInfo.GetPath(): %s", inputPathInfo.Path())
 		clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.Path())
 
-		cwd, err := os.Getwd()
+		currentWorkDir, err := os.Getwd()
 		clog.PanicIf(err)
-		currentWorkDir = cwd
 
 		var renameMethod renamer.Renamer
 		if random {
 			// FUZZY_MACHINE
-			renameMethod = renamer.FuzzyMachineOptions{
-				Uppercase: uppercase,
-				Truncate:  truncate,
+			renameMethod, err = renamer.NewFuzzyRenamer(
+				uppercase,
+				truncate,
 				// INFO: For file naming this (dryRun) will be random,
 				// but at least it will show the destination path
-				DryRun:         dryRun,
-				AbsolutePath:   absolutePath,
-				CurrentWorkDir: currentWorkDir,
-			}
+				dryRun,
+				displayAbsPath,
+				currentWorkDir,
+			)
+			clog.PanicIf(err)
 		} else {
 			// HASH_MACHINE
-			mHasher, err := hasher.NewHasher(hash, int(truncate))
+			mHasher, err := hasher.NewHasher(hashAlgorithm, int(truncate))
 			clog.PanicIf(err)
-			renameMethod = renamer.HashMachine{
-				Hasher: mHasher,
-				Options: renamer.HashMachineOptions{
-					Uppercase:      uppercase,
-					Truncate:       truncate,
-					DryRun:         dryRun,
-					AbsolutePath:   absolutePath,
-					CurrentWorkDir: currentWorkDir,
-				},
-			}
+
+			renameMethod, err = renamer.NewHashRenamer(
+				mHasher,
+				uppercase,
+				truncate,
+				dryRun,
+				displayAbsPath,
+				currentWorkDir,
+			)
+			clog.PanicIf(err)
 		}
 		// PATH_WALK
-		renamer.EnqueuePath(renameMethod, recursive, inputPathInfo, outputPathInfo)
+		renamer.RenameFromPath(renameMethod, recursive, inputPathInfo, outputPathInfo)
 	},
 }
 
@@ -177,7 +176,7 @@ func init() {
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scruffy.yaml)")
 
 	// Rename :: Methods
-	renameCmd.Flags().StringVarP(&hash, "hash", "H", "blake3", "Use file hash [md5/blake3/blake2b/sha1/sha256/sha512]")
+	renameCmd.Flags().StringVarP(&hashAlgorithm, "hash", "H", "blake3", "Use file hash [md5/blake3/blake2b/sha1/sha256/sha512]")
 	renameCmd.Flags().BoolVarP(&random, "random", "R", false, "Use random characters.")
 	renameCmd.MarkFlagsMutuallyExclusive("hash", "random")
 
@@ -195,7 +194,7 @@ func init() {
 	renameCmd.Flags().Uint8VarP(&truncate, "truncate", "t", 32, "Truncate filename (Beetween 8 and 128)")
 
 	// Rename :: Logging
-	renameCmd.Flags().BoolVarP(&absolutePath, "absolute-path", "A", false, "Print absolute paths relative when logging")
+	renameCmd.Flags().BoolVarP(&displayAbsPath, "absolute-path", "A", false, "Print absolute paths relative when logging")
 	renameCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Don't rename files")
 
 	// Rename :: Other

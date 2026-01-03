@@ -16,11 +16,11 @@ const (
 	OperationDryRun
 )
 
-type MachineOptions struct {
-	Uppercase      bool
+type RenamerOptions struct {
 	Truncate       uint8
+	Uppercase      bool
 	DryRun         bool
-	AbsolutePath   bool
+	DisplayAbsPath bool
 	CurrentWorkDir string
 }
 
@@ -33,10 +33,10 @@ type Renamer interface {
 	RenameMethod
 }
 
-func ReportOperation(options MachineOptions, operation Operation, source *cfs.PathInfo, destinationPath string) {
+func ReportOperation(options RenamerOptions, operation Operation, source *cfs.PathInfo, destinationPath string) {
 	var fSource string
 	// TODO: parse isSameVolume on rhash/parse.go (before)
-	if options.AbsolutePath {
+	if options.DisplayAbsPath {
 		fSource = source.Path()
 	} else {
 		var err error
@@ -68,8 +68,12 @@ func ReportOperation(options MachineOptions, operation Operation, source *cfs.Pa
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func EnqueuePath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo *cfs.PathInfo) error {
+func RenameFromPath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo *cfs.PathInfo) error {
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path())
+
+	if !outputPathInfo.IsDir() {
+		return errors.New("output is not a valid file or directory")
+	}
 
 	if inputPathInfo.IsRegularFile() {
 		clog.Debugf("Working on file \"%s\"", inputPathInfo.Path())
@@ -77,7 +81,7 @@ func EnqueuePath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo 
 	}
 
 	if !inputPathInfo.IsDir() {
-		return errors.New("Not a valid file or directory")
+		return errors.New("input is not a valid file or directory")
 	}
 
 	// TODO(21): Check WalkDir error/return
@@ -97,7 +101,7 @@ func EnqueuePath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo 
 					return err
 				}
 
-				EnqueuePath(
+				RenameFromPath(
 					renamer,
 					recursive,
 					recursePathInfo,

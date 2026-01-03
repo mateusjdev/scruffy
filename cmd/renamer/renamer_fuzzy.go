@@ -18,30 +18,40 @@ var (
 	charsetLen int        = len(charset)
 )
 
-type FuzzyMachineOptions MachineOptions
+type fuzzyRenamerOptions RenamerOptions
 
-func (fuzzyMachineOptions FuzzyMachineOptions) createFileName(_ *cfs.PathInfo) (string, error) {
-	b := make([]byte, fuzzyMachineOptions.Truncate)
+func NewFuzzyRenamer(uppercase bool, truncate uint8, dryRun, displayAbsolutePath bool, currentWorkDir string) (Renamer, error) {
+	return fuzzyRenamerOptions{
+		Uppercase:      uppercase,
+		Truncate:       truncate,
+		DryRun:         dryRun,
+		DisplayAbsPath: displayAbsolutePath,
+		CurrentWorkDir: currentWorkDir,
+	}, nil
+}
+
+func (renameOptions fuzzyRenamerOptions) createFileName(_ *cfs.PathInfo) (string, error) {
+	b := make([]byte, renameOptions.Truncate)
 	for i := range b {
 		b[i] = charset[seed.Intn(charsetLen)]
 	}
-	if fuzzyMachineOptions.Uppercase {
+	if renameOptions.Uppercase {
 		return strings.ToUpper(string(b)), nil
 	}
 	return string(b), nil
 }
 
-func (fuzzyMachineOptions FuzzyMachineOptions) renameFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
+func (renameOptions fuzzyRenamerOptions) renameFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
 	extension := filepath.Ext(sourceFileInfo.Path())
 
 	// If fails to rename, just generate a new name
 
-	if fuzzyMachineOptions.DryRun {
-		fileHash, _ := fuzzyMachineOptions.createFileName(nil)
+	if renameOptions.DryRun {
+		fileHash, _ := renameOptions.createFileName(nil)
 		destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 		ReportOperation(
-			MachineOptions(fuzzyMachineOptions),
+			RenamerOptions(renameOptions),
 			OperationDryRun,
 			sourceFileInfo,
 			destination,
@@ -51,14 +61,14 @@ func (fuzzyMachineOptions FuzzyMachineOptions) renameFile(sourceFileInfo, destin
 	}
 
 	for {
-		fileHash, _ := fuzzyMachineOptions.createFileName(sourceFileInfo)
+		fileHash, _ := renameOptions.createFileName(sourceFileInfo)
 		destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 		// TODO(16): Check if has permission to move to destination
 		err := cfs.SafeRename(sourceFileInfo, destination)
 		if err == nil {
 			ReportOperation(
-				MachineOptions(fuzzyMachineOptions),
+				RenamerOptions(renameOptions),
 				OperationRenamed,
 				sourceFileInfo,
 				destination,
