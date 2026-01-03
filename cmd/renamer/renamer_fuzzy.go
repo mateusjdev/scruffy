@@ -1,4 +1,4 @@
-package rhash
+package renamer
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ var (
 
 type FuzzyMachineOptions MachineOptions
 
-func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ *cfs.PathInfo) (string, error) {
+func (fuzzyMachineOptions FuzzyMachineOptions) createFileName(_ *cfs.PathInfo) (string, error) {
 	b := make([]byte, fuzzyMachineOptions.Truncate)
 	for i := range b {
 		b[i] = charset[seed.Intn(charsetLen)]
@@ -31,13 +31,13 @@ func (fuzzyMachineOptions FuzzyMachineOptions) getChecksum(_ *cfs.PathInfo) (str
 	return string(b), nil
 }
 
-func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
+func (fuzzyMachineOptions FuzzyMachineOptions) renameFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
 	extension := filepath.Ext(sourceFileInfo.Path())
 
 	// If fails to rename, just generate a new name
 
 	if fuzzyMachineOptions.DryRun {
-		fileHash, _ := fuzzyMachineOptions.getChecksum(nil)
+		fileHash, _ := fuzzyMachineOptions.createFileName(nil)
 		destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 		ReportOperation(
@@ -51,7 +51,7 @@ func (fuzzyMachineOptions FuzzyMachineOptions) workOnFile(sourceFileInfo, destin
 	}
 
 	for {
-		fileHash, _ := fuzzyMachineOptions.getChecksum(sourceFileInfo)
+		fileHash, _ := fuzzyMachineOptions.createFileName(sourceFileInfo)
 		destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 		// TODO(16): Check if has permission to move to destination

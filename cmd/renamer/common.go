@@ -1,4 +1,4 @@
-package rhash
+package renamer
 
 import (
 	"errors"
@@ -33,13 +33,13 @@ type MachineOptions struct {
 	CurrentWorkDir string
 }
 
-type RenameHelper interface {
-	workOnFile(*cfs.PathInfo, *cfs.PathInfo) error
-	getChecksum(*cfs.PathInfo) (string, error)
+type RenameMethod interface {
+	renameFile(*cfs.PathInfo, *cfs.PathInfo) error
+	createFileName(*cfs.PathInfo) (string, error)
 }
 
-type RenameMachine interface {
-	RenameHelper
+type Renamer interface {
+	RenameMethod
 }
 
 func ReportOperation(options MachineOptions, operation Operation, source *cfs.PathInfo, destinationPath string) {
@@ -77,12 +77,12 @@ func ReportOperation(options MachineOptions, operation Operation, source *cfs.Pa
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, outputPathInfo *cfs.PathInfo) error {
+func EnqueuePath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo *cfs.PathInfo) error {
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path())
 
 	if inputPathInfo.IsRegularFile() {
 		clog.Debugf("Working on file \"%s\"", inputPathInfo.Path())
-		return renameMachine.workOnFile(inputPathInfo, outputPathInfo)
+		return renamer.renameFile(inputPathInfo, outputPathInfo)
 	}
 
 	if !inputPathInfo.IsDir() {
@@ -107,7 +107,7 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 				}
 
 				EnqueuePath(
-					renameMachine,
+					renamer,
 					recursive,
 					recursePathInfo,
 					recursePathInfo,
@@ -124,6 +124,6 @@ func EnqueuePath(renameMachine RenameMachine, recursive bool, inputPathInfo, out
 		}
 
 		clog.Debugf("Working on file \"%s\"", fileInfo.Path())
-		return renameMachine.workOnFile(fileInfo, outputPathInfo)
+		return renamer.renameFile(fileInfo, outputPathInfo)
 	})
 }

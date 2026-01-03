@@ -3,7 +3,7 @@ package cmd
 import (
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/rhash"
+	"mateusjdev/scruffy/cmd/renamer"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,10 +136,10 @@ var renameCmd = &cobra.Command{
 		clog.PanicIf(err)
 		currentWorkDir = cwd
 
-		var machine rhash.RenameMachine
+		var renameMethod renamer.Renamer
 		if random {
 			// FUZZY_MACHINE
-			machine = rhash.FuzzyMachineOptions{
+			renameMethod = renamer.FuzzyMachineOptions{
 				Uppercase: uppercase,
 				Truncate:  truncate,
 				// INFO: For file naming this (dryRun) will be random,
@@ -150,11 +150,11 @@ var renameCmd = &cobra.Command{
 			}
 		} else {
 			// HASH_MACHINE
-			hashAlgorithm, err := rhash.GetHashAlgorithm(hash, int(truncate))
+			hashAlgorithm, err := renamer.GetHashAlgorithm(hash, int(truncate))
 			clog.PanicIf(err)
-			machine = rhash.HashMachine{
+			renameMethod = renamer.HashMachine{
 				Machine: hashAlgorithm,
-				Options: rhash.HashMachineOptions{
+				Options: renamer.HashMachineOptions{
 					Uppercase:      uppercase,
 					Truncate:       truncate,
 					DryRun:         dryRun,
@@ -164,7 +164,7 @@ var renameCmd = &cobra.Command{
 			}
 		}
 		// PATH_WALK
-		rhash.EnqueuePath(machine, recursive, inputPathInfo, outputPathInfo)
+		renamer.EnqueuePath(renameMethod, recursive, inputPathInfo, outputPathInfo)
 	},
 }
 

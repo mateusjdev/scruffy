@@ -1,4 +1,4 @@
-package rhash
+package renamer
 
 import (
 	"crypto"
@@ -51,8 +51,8 @@ func GetHashAlgorithm(hash string, length int) (hash.Hash, error) {
 	return nil, ErrUnknownHashMethod
 }
 
-func (hashMachine HashMachine) getChecksum(fileInfo *cfs.PathInfo) (string, error) {
-	if !fileInfo.IsRegularFile() {
+func (hashMachine HashMachine) createFileName(fileInfo *cfs.PathInfo) (string, error) {
+	if fileInfo == nil || !fileInfo.IsRegularFile() {
 		return "", errors.New("trying to hash a non file")
 	}
 
@@ -81,8 +81,8 @@ func (hashMachine HashMachine) getChecksum(fileInfo *cfs.PathInfo) (string, erro
 	return hashString, nil
 }
 
-func (hashMachine HashMachine) workOnFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
-	fileHash, err := hashMachine.getChecksum(sourceFileInfo)
+func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
+	fileHash, err := hashMachine.createFileName(sourceFileInfo)
 	if err != nil {
 		return err
 	}
