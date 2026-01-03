@@ -16,15 +16,6 @@ const (
 	OperationDryRun
 )
 
-const (
-	HashAlgorithmBlake2b string = "blake2b"
-	HashAlgorithmBlake3  string = "blake3"
-	HashAlgorithmMD5     string = "md5"
-	HashAlgorithmSHA1    string = "sha1"
-	HashAlgorithmSHA256  string = "sha256"
-	HashAlgorithmSHA512  string = "sha512"
-)
-
 type MachineOptions struct {
 	Uppercase      bool
 	Truncate       uint8

@@ -1,84 +1,36 @@
 package renamer
 
 import (
-	"crypto"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"hash"
-	"io"
 	"mateusjdev/scruffy/cmd/cfs"
-	"os"
+	"mateusjdev/scruffy/cmd/hasher"
 	"path/filepath"
 	"strings"
-
-	"lukechampine.com/blake3"
 )
 
 type HashMachineOptions MachineOptions
 
 type HashMachine struct {
-	Machine hash.Hash
+	Hasher  *hasher.Hasher
 	Options HashMachineOptions
 }
 
-var (
-	ErrUnknownHashMethod = errors.New("hash method not valid")
-)
-
-// TODO(8): Work on length/truncate flag
-// Chosse between "--hash SHA224 ..." or "--hash SHA2 --length 224"
-func GetHashAlgorithm(hash string, length int) (hash.Hash, error) {
-	switch hash {
-	case HashAlgorithmBlake2b:
-		// length: fixed_256_bits (256, 384, 512)
-		return crypto.BLAKE2b_256.New(), nil
-	case HashAlgorithmBlake3:
-		return blake3.New(length/2, nil), nil
-	case HashAlgorithmMD5:
-		// length: fixed_128_bits
-		return crypto.MD5.New(), nil
-	case HashAlgorithmSHA1:
-		// length: fixed_160_bits
-		return crypto.SHA1.New(), nil
-	case HashAlgorithmSHA256:
-		// length: fixed_256_bits
-		return crypto.SHA256.New(), nil
-	case HashAlgorithmSHA512:
-		// length: fixed_512_bits
-		return crypto.SHA512.New(), nil
-	}
-	return nil, ErrUnknownHashMethod
-}
-
 func (hashMachine HashMachine) createFileName(fileInfo *cfs.PathInfo) (string, error) {
-	if fileInfo == nil || !fileInfo.IsRegularFile() {
-		return "", errors.New("trying to hash a non file")
-	}
-
-	file, err := os.Open(fileInfo.Path())
+	hash, err := hashMachine.Hasher.Checksum(fileInfo)
 	if err != nil {
 		return "", err
 	}
 
-	defer file.Close()
-	if _, err := io.Copy(hashMachine.Machine, file); err != nil {
-		return "", err
-	}
-	hashInBytes := hashMachine.Machine.Sum(nil)
-	hashString := hex.EncodeToString(hashInBytes)
-
-	hashMachine.Machine.Reset()
-
 	if hashMachine.Options.Truncate != 0 {
-		hashString = hashString[0:hashMachine.Options.Truncate]
+		hash = hash[0:hashMachine.Options.Truncate]
 	}
 
 	if hashMachine.Options.Uppercase {
-		hashString = strings.ToUpper(hashString)
+		hash = strings.ToUpper(hash)
 	}
 
-	return hashString, nil
+	return hash, nil
 }
 
 func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {

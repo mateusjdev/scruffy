@@ -3,6 +3,7 @@ package cmd
 import (
 	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
+	"mateusjdev/scruffy/cmd/hasher"
 	"mateusjdev/scruffy/cmd/renamer"
 	"os"
 	"path/filepath"
@@ -150,10 +151,10 @@ var renameCmd = &cobra.Command{
 			}
 		} else {
 			// HASH_MACHINE
-			hashAlgorithm, err := renamer.GetHashAlgorithm(hash, int(truncate))
+			mHasher, err := hasher.NewHasher(hash, int(truncate))
 			clog.PanicIf(err)
 			renameMethod = renamer.HashMachine{
-				Machine: hashAlgorithm,
+				Hasher: mHasher,
 				Options: renamer.HashMachineOptions{
 					Uppercase:      uppercase,
 					Truncate:       truncate,
