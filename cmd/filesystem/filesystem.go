@@ -1,4 +1,4 @@
-package cfs
+package filesystem
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ func IsSameVolume(path1, path2 string) bool {
 }
 
 // TODO(16): Check if has permission to move to destination
-// ?: return cfs.CustomFileInfo?
+// ?: return filesystem.CustomFileInfo?
 func SafeRename(source *PathInfo, destination string) error {
 	// BUG: if source is lowercase and output is uppercase, they are reported as diferent files
 	// This causes every file to be renamed as "uppercase_1.ext"

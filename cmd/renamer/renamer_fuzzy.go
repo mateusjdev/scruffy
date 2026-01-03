@@ -2,7 +2,7 @@ package renamer
 
 import (
 	"errors"
-	"mateusjdev/scruffy/cmd/cfs"
+	"mateusjdev/scruffy/cmd/filesystem"
 	"math/rand"
 	"path/filepath"
 	"strings"
@@ -30,7 +30,7 @@ func NewFuzzyRenamer(uppercase bool, truncate uint8, dryRun, displayAbsolutePath
 	}, nil
 }
 
-func (renameOptions fuzzyRenamerOptions) createFileName(_ *cfs.PathInfo) (string, error) {
+func (renameOptions fuzzyRenamerOptions) createFileName(_ *filesystem.PathInfo) (string, error) {
 	b := make([]byte, renameOptions.Truncate)
 	for i := range b {
 		b[i] = charset[seed.Intn(charsetLen)]
@@ -41,7 +41,7 @@ func (renameOptions fuzzyRenamerOptions) createFileName(_ *cfs.PathInfo) (string
 	return string(b), nil
 }
 
-func (renameOptions fuzzyRenamerOptions) renameFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
+func (renameOptions fuzzyRenamerOptions) renameFile(sourceFileInfo, destinationDirInfo *filesystem.PathInfo) error {
 	extension := filepath.Ext(sourceFileInfo.Path())
 
 	// If fails to rename, just generate a new name
@@ -65,7 +65,7 @@ func (renameOptions fuzzyRenamerOptions) renameFile(sourceFileInfo, destinationD
 		destination := filepath.Join(destinationDirInfo.Path(), fileHash+extension)
 
 		// TODO(16): Check if has permission to move to destination
-		err := cfs.SafeRename(sourceFileInfo, destination)
+		err := filesystem.SafeRename(sourceFileInfo, destination)
 		if err == nil {
 			ReportOperation(
 				RenamerOptions(renameOptions),
@@ -74,7 +74,7 @@ func (renameOptions fuzzyRenamerOptions) renameFile(sourceFileInfo, destinationD
 				destination,
 			)
 			return nil
-		} else if errors.Is(err, cfs.ErrSameFile) || errors.Is(err, cfs.ErrFileExists) {
+		} else if errors.Is(err, filesystem.ErrSameFile) || errors.Is(err, filesystem.ErrFileExists) {
 			continue
 		}
 

@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
+	"mateusjdev/scruffy/cmd/filesystem"
 	"mateusjdev/scruffy/cmd/hasher"
 	"mateusjdev/scruffy/cmd/renamer"
 	"os"
@@ -82,11 +82,11 @@ var renameCmd = &cobra.Command{
 			clog.Panicf("--input is empty or invalid")
 		}
 
-		inputPathInfo, err := cfs.StatPath(inputPath)
+		inputPathInfo, err := filesystem.StatPath(inputPath)
 		clog.PanicIf(err)
 		// TODO: Wrap if os.ErrNotExist
 		/*
-			if inputPathInfo.GetPathType() == cfs.PathIsNonExistent {
+			if inputPathInfo.GetPathType() == filesystem.PathIsNonExistent {
 				clog.Panicf("Source path %s is not a valid file or a directory\n", inputPath)
 			}
 		*/
@@ -104,13 +104,13 @@ var renameCmd = &cobra.Command{
 		}
 
 		// TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
-		outputPathInfo, err := cfs.StatPath(outputPath)
+		outputPathInfo, err := filesystem.StatPath(outputPath)
 		clog.PanicIf(err)
 		if !outputPathInfo.IsDir() {
 			clog.Panicf("Destination folder \"%s\" is not a valid directory\n", outputPath)
 		}
 
-		isInGitRepo, err := cfs.IsPathInGitRepo(inputPathInfo)
+		isInGitRepo, err := filesystem.IsPathInGitRepo(inputPathInfo)
 		if isInGitRepo {
 			if !skipGitCheck {
 				clog.Panicf("%s is in a git repo", inputPathInfo.Path())
@@ -119,7 +119,7 @@ var renameCmd = &cobra.Command{
 		}
 
 		if inputPathInfo.Path() != outputPathInfo.Path() {
-			isInGitRepo, err := cfs.IsPathInGitRepo(outputPathInfo)
+			isInGitRepo, err := filesystem.IsPathInGitRepo(outputPathInfo)
 			clog.PanicIf(err)
 			if isInGitRepo {
 				if !skipGitCheck {

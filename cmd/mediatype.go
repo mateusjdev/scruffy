@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
+	"mateusjdev/scruffy/cmd/filesystem"
 	"mateusjdev/scruffy/cmd/mimetype"
 
 	"github.com/spf13/cobra"
@@ -16,7 +16,7 @@ var mediatypeCmd = &cobra.Command{
 		inputPath, err := cmd.Flags().GetString("input")
 		clog.PanicIf(err)
 
-		inputPathInfo, err := cfs.StatPath(inputPath)
+		inputPathInfo, err := filesystem.StatPath(inputPath)
 		clog.PanicIf(err)
 
 		ignoreExtMatch, err := cmd.Flags().GetBool("ignore-ok")

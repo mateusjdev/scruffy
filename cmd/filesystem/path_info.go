@@ -1,4 +1,4 @@
-package cfs
+package filesystem
 
 import (
 	"errors"

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"hash"
 	"io"
-	"mateusjdev/scruffy/cmd/cfs"
+	"mateusjdev/scruffy/cmd/filesystem"
 	"os"
 
 	"lukechampine.com/blake3"
@@ -54,7 +54,7 @@ func NewHasher(algorithm string, length int) (*Hasher, error) {
 	return nil, ErrUnknownHashMethod
 }
 
-func (hasher *Hasher) Checksum(fileInfo *cfs.PathInfo) (string, error) {
+func (hasher *Hasher) Checksum(fileInfo *filesystem.PathInfo) (string, error) {
 	if fileInfo == nil || !fileInfo.IsRegularFile() {
 		return "", errors.New("trying to hash a non file")
 	}

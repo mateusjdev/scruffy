@@ -3,8 +3,8 @@ package renamer
 import (
 	"errors"
 	"io/fs"
-	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
+	"mateusjdev/scruffy/cmd/filesystem"
 	"path/filepath"
 )
 
@@ -25,22 +25,22 @@ type RenamerOptions struct {
 }
 
 type RenameMethod interface {
-	renameFile(*cfs.PathInfo, *cfs.PathInfo) error
-	createFileName(*cfs.PathInfo) (string, error)
+	renameFile(*filesystem.PathInfo, *filesystem.PathInfo) error
+	createFileName(*filesystem.PathInfo) (string, error)
 }
 
 type Renamer interface {
 	RenameMethod
 }
 
-func ReportOperation(options RenamerOptions, operation Operation, source *cfs.PathInfo, destinationPath string) {
+func ReportOperation(options RenamerOptions, operation Operation, source *filesystem.PathInfo, destinationPath string) {
 	var fSource string
 	// TODO: parse isSameVolume on rhash/parse.go (before)
 	if options.DisplayAbsPath {
 		fSource = source.Path()
 	} else {
 		var err error
-		if cfs.IsSameVolume(options.CurrentWorkDir, source.Path()) {
+		if filesystem.IsSameVolume(options.CurrentWorkDir, source.Path()) {
 			fSource, err = filepath.Rel(options.CurrentWorkDir, source.Path())
 			if err != nil {
 				fSource = source.Path()
@@ -49,7 +49,7 @@ func ReportOperation(options RenamerOptions, operation Operation, source *cfs.Pa
 			fSource = source.Path()
 		}
 
-		if cfs.IsSameVolume(options.CurrentWorkDir, destinationPath) {
+		if filesystem.IsSameVolume(options.CurrentWorkDir, destinationPath) {
 			relativePath, err := filepath.Rel(options.CurrentWorkDir, destinationPath)
 			if err != nil {
 				destinationPath = relativePath
@@ -68,7 +68,7 @@ func ReportOperation(options RenamerOptions, operation Operation, source *cfs.Pa
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func RenameFromPath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo *cfs.PathInfo) error {
+func RenameFromPath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo *filesystem.PathInfo) error {
 	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path())
 
 	if !outputPathInfo.IsDir() {
@@ -96,7 +96,7 @@ func RenameFromPath(renamer Renamer, recursive bool, inputPathInfo, outputPathIn
 			}
 
 			if recursive {
-				recursePathInfo, err := cfs.StatPath(path)
+				recursePathInfo, err := filesystem.StatPath(path)
 				if err != nil {
 					return err
 				}
@@ -113,7 +113,7 @@ func RenameFromPath(renamer Renamer, recursive bool, inputPathInfo, outputPathIn
 			return filepath.SkipDir
 		}
 
-		fileInfo, err := cfs.StatPath(path)
+		fileInfo, err := filesystem.StatPath(path)
 		if err != nil {
 			return err
 		}

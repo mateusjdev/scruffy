@@ -3,7 +3,7 @@ package renamer
 import (
 	"errors"
 	"fmt"
-	"mateusjdev/scruffy/cmd/cfs"
+	"mateusjdev/scruffy/cmd/filesystem"
 	"mateusjdev/scruffy/cmd/hasher"
 	"path/filepath"
 	"strings"
@@ -29,7 +29,7 @@ func NewHashRenamer(hasher *hasher.Hasher, uppercase bool, truncate uint8, dryRu
 	}, nil
 }
 
-func (hashMachine HashMachine) createFileName(fileInfo *cfs.PathInfo) (string, error) {
+func (hashMachine HashMachine) createFileName(fileInfo *filesystem.PathInfo) (string, error) {
 	hash, err := hashMachine.Hasher.Checksum(fileInfo)
 	if err != nil {
 		return "", err
@@ -46,7 +46,7 @@ func (hashMachine HashMachine) createFileName(fileInfo *cfs.PathInfo) (string, e
 	return hash, nil
 }
 
-func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cfs.PathInfo) error {
+func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *filesystem.PathInfo) error {
 	fileHash, err := hashMachine.createFileName(sourceFileInfo)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 	}
 
 	// TODO(16): Check if has permission to move to destination
-	err = cfs.SafeRename(sourceFileInfo, destination)
+	err = filesystem.SafeRename(sourceFileInfo, destination)
 	if err == nil {
 		ReportOperation(
 			RenamerOptions(hashMachine.Options),
@@ -84,7 +84,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 			destination,
 		)
 		return nil
-	} else if errors.Is(err, cfs.ErrSameFile) {
+	} else if errors.Is(err, filesystem.ErrSameFile) {
 		ReportOperation(
 			RenamerOptions(hashMachine.Options),
 			OperationSameFile,
@@ -92,7 +92,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 			destination,
 		)
 		return nil
-	} else if !errors.Is(err, cfs.ErrFileExists) {
+	} else if !errors.Is(err, filesystem.ErrFileExists) {
 		return err
 	}
 
@@ -101,7 +101,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 		newFileName := fmt.Sprintf("%s_%d%s", fileHash, counter, extension)
 		destination := filepath.Join(destinationDirInfo.Path(), newFileName)
 
-		err = cfs.SafeRename(sourceFileInfo, destination)
+		err = filesystem.SafeRename(sourceFileInfo, destination)
 		if err == nil {
 			ReportOperation(
 				RenamerOptions(hashMachine.Options),
@@ -110,7 +110,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 				destination,
 			)
 			return nil
-		} else if errors.Is(err, cfs.ErrSameFile) {
+		} else if errors.Is(err, filesystem.ErrSameFile) {
 			ReportOperation(
 				RenamerOptions(hashMachine.Options),
 				OperationSameFile,
@@ -118,7 +118,7 @@ func (hashMachine HashMachine) renameFile(sourceFileInfo, destinationDirInfo *cf
 				destination,
 			)
 			return nil
-		} else if !errors.Is(err, cfs.ErrFileExists) {
+		} else if !errors.Is(err, filesystem.ErrFileExists) {
 			return err
 		}
 

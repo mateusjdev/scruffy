@@ -3,14 +3,14 @@ package mimetype
 import (
 	"errors"
 	"io/fs"
-	"mateusjdev/scruffy/cmd/cfs"
 	"mateusjdev/scruffy/cmd/clog"
+	"mateusjdev/scruffy/cmd/filesystem"
 	"path/filepath"
 
 	"github.com/gabriel-vasile/mimetype"
 )
 
-func checkFile(path *cfs.PathInfo, ignoreOk bool) error {
+func checkFile(path *filesystem.PathInfo, ignoreOk bool) error {
 	clog.Debugf("Working on file \"%s\"", path.Path())
 	mtype, err := mimetype.DetectFile(path.Path())
 	if err != nil {
@@ -39,7 +39,7 @@ func checkFile(path *cfs.PathInfo, ignoreOk bool) error {
 	return nil
 }
 
-func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) error {
+func CheckPath(inputPathInfo *filesystem.PathInfo, ignoreOk bool) error {
 	if inputPathInfo.IsRegularFile() {
 		return checkFile(inputPathInfo, ignoreOk)
 	}
@@ -58,7 +58,7 @@ func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) error {
 				return nil
 			}
 
-			recursePathInfo, err := cfs.StatPath(path)
+			recursePathInfo, err := filesystem.StatPath(path)
 			if err != nil {
 				return err
 			}
@@ -68,7 +68,7 @@ func CheckPath(inputPathInfo *cfs.PathInfo, ignoreOk bool) error {
 			return filepath.SkipDir
 		}
 
-		fileInfo, err := cfs.StatPath(path)
+		fileInfo, err := filesystem.StatPath(path)
 		if err != nil {
 			return err
 		}
