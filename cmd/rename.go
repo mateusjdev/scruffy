@@ -18,11 +18,12 @@ const (
 )
 
 var (
+	hash   string
+	random bool
+
 	absolutePath   bool
 	dryRun         bool
 	force          bool
-	hash           string
-	fuzzy          bool
 	recursive      bool
 	truncate       uint8
 	uppercase      bool
@@ -72,7 +73,7 @@ var renameCmd = &cobra.Command{
 	inputPath: %s
 	outputPath: %s
 	hash: %s
-	fuzzy: %t`, dryRun, silent, recursive, absolutePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash, fuzzy)
+	random: %t`, dryRun, silent, recursive, absolutePath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hash, random)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		clog.Debugf("Starting module::%s", cmd.Use)
@@ -128,7 +129,7 @@ var renameCmd = &cobra.Command{
 		currentWorkDir = cwd
 
 		var machine rhash.RenameMachine
-		if fuzzy {
+		if random {
 			// FUZZY_MACHINE
 			machine = rhash.FuzzyMachineOptions{
 				Uppercase: uppercase,
@@ -167,7 +168,7 @@ func init() {
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scruffy.yaml)")
 
 	renameCmd.Flags().StringVarP(&hash, "hash", "H", "blake3", "Use file hash [md5/blake3/blake2b/sha1/sha256/sha512]")
-	renameCmd.Flags().BoolVarP(&fuzzy, "random", "R", false, "Use random characters.")
+	renameCmd.Flags().BoolVarP(&random, "random", "R", false, "Use random characters.")
 	renameCmd.MarkFlagsMutuallyExclusive("hash", "random")
 
 	// TODO(2) Add multiple inputs (Ex: --input $1 -i $2 -i $3)
