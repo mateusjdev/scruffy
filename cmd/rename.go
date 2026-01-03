@@ -42,6 +42,7 @@ var renameCmd = &cobra.Command{
 		if debug {
 			clog.SetLogLevel(clog.LevelDebug)
 		}
+
 		silent, _ := cmd.Flags().GetBool("silent")
 		if silent {
 			clog.SetLogLevel(clog.LevelWarning)
@@ -174,30 +175,31 @@ func init() {
 	// TODO(1a): Use XDG Base Directory Specification
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scruffy.yaml)")
 
+	// Rename :: Methods
 	renameCmd.Flags().StringVarP(&hash, "hash", "H", "blake3", "Use file hash [md5/blake3/blake2b/sha1/sha256/sha512]")
 	renameCmd.Flags().BoolVarP(&random, "random", "R", false, "Use random characters.")
 	renameCmd.MarkFlagsMutuallyExclusive("hash", "random")
 
-	// TODO(2) Add multiple inputs (Ex: --input $1 -i $2 -i $3)
-	// TODO(2): Drop -i and use 'scruffy rhash $i $2 $3'
+	// Rename :: Path
+	// TODO(2) Add multiple inputs (Ex: --input $1 -i $2 -i $3) || Drop -i and use 'scruffy rhash $i $2 $3'
 	renameCmd.Flags().StringVarP(&inputPath, "input", "i", "./", "Path to DIR/FILE which will be hashed")
 
 	// INFO: If --output/defaultOutputPath is not declared, it will be the same as --input/defaultInputPath
 	renameCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Location were hashed files will be stored")
+	renameCmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recurse DIRs, when enabled, will not accept a target directory")
 
-	renameCmd.Flags().BoolVarP(&absolutePath, "absolute-path", "A", false, "Print absolute paths relative when logging")
-
-	renameCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Don't rename files")
-
+	// Rename :: Options
 	renameCmd.Flags().BoolVarP(&uppercase, "uppercase", "U", false, "Convert characters to UPPERCASE")
-
-	// Ignore git checks
-	renameCmd.Flags().BoolVarP(&force, "force", "F", false, "Ignore git checks")
-
 	// recommended max filename is 256
 	renameCmd.Flags().Uint8VarP(&truncate, "truncate", "t", 32, "Truncate filename (Beetween 8 and 128)")
 
-	renameCmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recurse DIRs, when enabled, will not accept a target directory")
+	// Rename :: Logging
+	renameCmd.Flags().BoolVarP(&absolutePath, "absolute-path", "A", false, "Print absolute paths relative when logging")
+	renameCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Don't rename files")
+
+	// Rename :: Other
+	// Ignore git checks
+	renameCmd.Flags().BoolVarP(&force, "force", "F", false, "Ignore git checks")
 
 	// TODO(10): Recreate folder structure on destination Dir
 	// For now --recursive and --output will be mutually exclusive
@@ -211,6 +213,5 @@ func init() {
 	// Why abreviate paths if nothing will be shown on screen?
 	// rhashCmd.MarkFlagsMutuallyExclusive("silent", "abbreviate-path")
 
-	renameCmd.MarkFlagFilename("input")
 	renameCmd.MarkFlagDirname("output")
 }
