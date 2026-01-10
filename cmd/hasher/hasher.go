@@ -55,8 +55,12 @@ func NewHasher(algorithm string, length int) (*Hasher, error) {
 }
 
 func (hasher *Hasher) Checksum(fileInfo *filesystem.PathInfo) (string, error) {
-	if fileInfo == nil || !fileInfo.IsRegularFile() {
-		return "", errors.New("trying to hash a non file")
+	if fileInfo == nil {
+		return "", errors.New("trying to hash a nil file")
+	}
+
+	if !fileInfo.IsRegularFile() {
+		return "", errors.New("trying to hash a non regular file")
 	}
 
 	file, err := os.Open(fileInfo.Path())

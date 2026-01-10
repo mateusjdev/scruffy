@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"os"
+	"mateusjdev/scruffy/cmd/clog"
 
 	"github.com/spf13/cobra"
 )
@@ -24,7 +24,5 @@ func init() {
 
 func Execute() {
 	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
+	clog.PanicIf(err)
 }
