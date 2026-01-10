@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"mateusjdev/scruffy/cmd/clog"
 	"mateusjdev/scruffy/cmd/filesystem"
 	"mateusjdev/scruffy/cmd/hasher"
@@ -12,84 +13,101 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	ARGS_MIN_TRUNCATE = 8
-	ARGS_MAX_TRUNCATE = 128
-)
-
-var (
-	hashAlgorithm string
-	random        bool
-
-	displayAbsPath bool
-	dryRun         bool
-	force          bool
-	recursive      bool
-	truncate       uint8
-	uppercase      bool
-	skipGitCheck   bool
-	inputPath      string
-	outputPath     string
-)
-
 var renameCmd = &cobra.Command{
-	Use:     "rename [source]",
+	Use:     "rename",
 	Aliases: []string{"rhash"},
 	Short:   "Batch rename files.",
-	PreRun: func(cmd *cobra.Command, args []string) {
-		// Check LogLevel (global-flags)
-		debug, _ := cmd.Flags().GetBool("debug")
-		if debug {
-			clog.SetLogLevel(clog.LevelDebug)
-		}
+	RunE: func(cmd *cobra.Command, args []string) error {
+		clog.Debugf("Starting module::%s", cmd.Use)
 
 		silent, _ := cmd.Flags().GetBool("silent")
 		if silent {
 			clog.SetLogLevel(clog.LevelWarning)
 		}
-		// Check LogLevel (global-flags)
+
+		truncate, err := cmd.Flags().GetUint8("truncate")
+		if err != nil {
+			return err
+		}
 
 		if truncate < ARGS_MIN_TRUNCATE {
-			clog.Panicf("--truncate is very low, choose >= %d", ARGS_MIN_TRUNCATE)
+			return fmt.Errorf("--truncate is very low, choose >= %d", ARGS_MIN_TRUNCATE)
 		}
 
 		if truncate > ARGS_MAX_TRUNCATE {
-			clog.Panicf("--truncate is very high, choose <= %d", ARGS_MAX_TRUNCATE)
+			return fmt.Errorf("--truncate is very high, choose <= %d", ARGS_MAX_TRUNCATE)
 		}
 
-		skipGitCheck = force || debug || dryRun
-
 		// TODO: validate hash here
+		hashAlgorithm, err := cmd.Flags().GetString("hash")
+		if err != nil {
+			return err
+		}
+
 		hashAlgorithm = strings.ToLower(hashAlgorithm)
 
-		clog.Debugf(`Args:
-	dry-run: %t
-	silent: %t
-	recursive: %t
-	absolute-path: %t
-	skipGitCheck: %t
-	uppercase: %t
-	truncate: %d
-	inputPath: %s
-	outputPath: %s
-	hash: %s
-	random: %t`, dryRun, silent, recursive, displayAbsPath, skipGitCheck, uppercase, truncate, inputPath, outputPath, hashAlgorithm, random)
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		clog.Debugf("Starting module::%s", cmd.Use)
+		uppercase, err := cmd.Flags().GetBool("uppercase")
+		if err != nil {
+			return err
+		}
+
+		displayAbsPath, err := cmd.Flags().GetBool("absolute-path")
+		if err != nil {
+			return err
+		}
+
+		random, err := cmd.Flags().GetBool("random")
+		if err != nil {
+			return err
+		}
+
+		recursive, err := cmd.Flags().GetBool("recursive")
+		if err != nil {
+			return err
+		}
+
+		dryRun, err := cmd.Flags().GetBool("dry-run")
+		if err != nil {
+			return err
+		}
+
+		skipGitCheck, err := cmd.Flags().GetBool("force")
+		if err != nil {
+			return err
+		}
+
+		inputPath, err := cmd.Flags().GetString("input")
+		if err != nil {
+			return err
+		}
+
+		outputPath, err := cmd.Flags().GetString("output")
+		if err != nil {
+			return err
+		}
+
+		clog.Debugf("Args:\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+			fmt.Sprintf("dry-run: %t", dryRun),
+			fmt.Sprintf("silent: %t", silent),
+			fmt.Sprintf("recursive: %t", recursive),
+			fmt.Sprintf("absolute-path: %t", displayAbsPath),
+			fmt.Sprintf("skipGitCheck: %t", skipGitCheck),
+			fmt.Sprintf("uppercase: %t", uppercase),
+			fmt.Sprintf("truncate: %d", truncate),
+			fmt.Sprintf("inputPath: %s", inputPath),
+			fmt.Sprintf("outputPath: %s", outputPath),
+			fmt.Sprintf("hash: %s", hashAlgorithm),
+			fmt.Sprintf("random: %t", random),
+		)
 
 		if inputPath == "" {
 			clog.Panicf("--input is empty or invalid")
 		}
 
 		inputPathInfo, err := filesystem.StatPath(inputPath)
-		clog.PanicIf(err)
-		// TODO: Wrap if os.ErrNotExist
-		/*
-			if inputPathInfo.GetPathType() == filesystem.PathIsNonExistent {
-				clog.Panicf("Source path %s is not a valid file or a directory\n", inputPath)
-			}
-		*/
+		if err != nil {
+			return err
+		}
 
 		if outputPath == "" {
 			if cmd.Flags().Lookup("output").Changed {
@@ -105,7 +123,9 @@ var renameCmd = &cobra.Command{
 
 		// TODO(11): Create destinationPath if doesn't exist (maybe add a flag? force?)
 		outputPathInfo, err := filesystem.StatPath(outputPath)
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
 		if !outputPathInfo.IsDir() {
 			clog.Panicf("Destination folder \"%s\" is not a valid directory\n", outputPath)
 		}
@@ -120,7 +140,9 @@ var renameCmd = &cobra.Command{
 
 		if inputPathInfo.Path() != outputPathInfo.Path() {
 			isInGitRepo, err := filesystem.IsPathInGitRepo(outputPathInfo)
-			clog.PanicIf(err)
+			if err != nil {
+				return err
+			}
 			if isInGitRepo {
 				if !skipGitCheck {
 					clog.Panicf("%s is in a git repo", outputPathInfo.Path())
@@ -133,7 +155,9 @@ var renameCmd = &cobra.Command{
 		clog.Debugf("outputPathInfo.GetPath(): %s", outputPathInfo.Path())
 
 		currentWorkDir, err := os.Getwd()
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
 
 		var renameMethod renamer.Renamer
 		if random {
@@ -147,11 +171,15 @@ var renameCmd = &cobra.Command{
 				displayAbsPath,
 				currentWorkDir,
 			)
-			clog.PanicIf(err)
+			if err != nil {
+				return err
+			}
 		} else {
 			// HASH_MACHINE
 			mHasher, err := hasher.NewHasher(hashAlgorithm, int(truncate))
-			clog.PanicIf(err)
+			if err != nil {
+				return err
+			}
 
 			renameMethod, err = renamer.NewHashRenamer(
 				mHasher,
@@ -161,10 +189,14 @@ var renameCmd = &cobra.Command{
 				displayAbsPath,
 				currentWorkDir,
 			)
-			clog.PanicIf(err)
+			if err != nil {
+				return err
+			}
 		}
 		// PATH_WALK
 		renamer.RenameFromPath(renameMethod, recursive, inputPathInfo, outputPathInfo)
+
+		return nil
 	},
 }
 
@@ -176,30 +208,30 @@ func init() {
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scruffy.yaml)")
 
 	// Rename :: Methods
-	renameCmd.Flags().StringVarP(&hashAlgorithm, "hash", "H", "blake3", "Use file hash [md5/blake3/blake2b/sha1/sha256/sha512]")
-	renameCmd.Flags().BoolVarP(&random, "random", "R", false, "Use random characters.")
+	renameCmd.Flags().StringP("hash", "H", "blake3", "Use file hash [md5/blake3/blake2b/sha1/sha256/sha512]")
+	renameCmd.Flags().BoolP("random", "R", false, "Use random characters.")
 	renameCmd.MarkFlagsMutuallyExclusive("hash", "random")
 
 	// Rename :: Path
 	// TODO(2) Add multiple inputs (Ex: --input $1 -i $2 -i $3) || Drop -i and use 'scruffy rhash $i $2 $3'
-	renameCmd.Flags().StringVarP(&inputPath, "input", "i", "./", "Path to DIR/FILE which will be hashed")
+	renameCmd.Flags().StringP("input", "i", "./", "Path to DIR/FILE which will be hashed")
 
 	// INFO: If --output/defaultOutputPath is not declared, it will be the same as --input/defaultInputPath
-	renameCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Location were hashed files will be stored")
-	renameCmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recurse DIRs, when enabled, will not accept a target directory")
+	renameCmd.Flags().StringP("output", "o", "", "Location were hashed files will be stored")
+	renameCmd.Flags().BoolP("recursive", "r", false, "Recurse DIRs, when enabled, will not accept a target directory")
 
 	// Rename :: Options
-	renameCmd.Flags().BoolVarP(&uppercase, "uppercase", "U", false, "Convert characters to UPPERCASE")
+	renameCmd.Flags().BoolP("uppercase", "U", false, "Convert characters to UPPERCASE")
 	// recommended max filename is 256
-	renameCmd.Flags().Uint8VarP(&truncate, "truncate", "t", 32, "Truncate filename (Beetween 8 and 128)")
+	renameCmd.Flags().Uint8P("truncate", "t", 32, "Truncate filename (Beetween 8 and 128)")
 
 	// Rename :: Logging
-	renameCmd.Flags().BoolVarP(&displayAbsPath, "absolute-path", "A", false, "Print absolute paths relative when logging")
-	renameCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Don't rename files")
+	renameCmd.Flags().BoolP("absolute-path", "A", false, "Print absolute paths relative when logging")
+	renameCmd.Flags().BoolP("dry-run", "d", false, "Don't rename files")
 
 	// Rename :: Other
 	// Ignore git checks
-	renameCmd.Flags().BoolVarP(&force, "force", "F", false, "Ignore git checks")
+	renameCmd.Flags().BoolP("force", "F", false, "Ignore git checks")
 
 	// TODO(10): Recreate folder structure on destination Dir
 	// For now --recursive and --output will be mutually exclusive

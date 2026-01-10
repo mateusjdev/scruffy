@@ -81,13 +81,6 @@ func Panicf(msg string, args ...any) {
 	os.Exit(1)
 }
 
-func PanicIf(err error) {
-	if err != nil {
-		Errorf("%s\n", err)
-		os.Exit(1)
-	}
-}
-
 func SetLogLevel(level logLevel) {
 	logLoggerLevel = level
 }

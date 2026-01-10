@@ -10,20 +10,32 @@ import (
 
 var mediatypeCmd = &cobra.Command{
 	Use:     "mediatype",
-	Aliases: []string{"mimetype"},
+	Aliases: []string{"mimetype", "mime"},
 	Short:   "Check the mimetype of a file",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		clog.Debugf("Starting module::%s", cmd.Use)
+
 		inputPath, err := cmd.Flags().GetString("input")
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
 
 		inputPathInfo, err := filesystem.StatPath(inputPath)
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
 
 		ignoreExtMatch, err := cmd.Flags().GetBool("ignore-ok")
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
 
 		mimetype.CheckPath(inputPathInfo, ignoreExtMatch)
-		clog.PanicIf(err)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	},
 }
 

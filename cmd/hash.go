@@ -16,14 +16,7 @@ var hashCmd = &cobra.Command{
 	Use:   "hash",
 	Short: "Check hash of files.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Check LogLevel (global-flags)
-		debug, err := cmd.Flags().GetBool("debug")
-		if err != nil {
-			return err
-		}
-		if debug {
-			clog.SetLogLevel(clog.LevelDebug)
-		}
+		clog.Debugf("Starting module::%s", cmd.Use)
 
 		truncate, err := cmd.Flags().GetUint8("truncate")
 		if err != nil {
@@ -66,6 +59,15 @@ var hashCmd = &cobra.Command{
 			return err
 		}
 
+		if inputPath == "" {
+			return errors.New("--input is empty or invalid")
+		}
+
+		inputPathInfo, err := filesystem.StatPath(inputPath)
+		if err != nil {
+			return err
+		}
+
 		clog.Debugf(
 			"Args:\n%s\n%s\n%s\n%s\n%s\n%s\n",
 			fmt.Sprintf("recursive: %t", recursive),
@@ -76,19 +78,8 @@ var hashCmd = &cobra.Command{
 			fmt.Sprintf("hashAlgorithm: %s", algorithm),
 		)
 
-		clog.Debugf("Starting module::%s", cmd.Use)
-
-		if inputPath == "" {
-			return errors.New("--input is empty or invalid")
-		}
-
-		inputPathInfo, err := filesystem.StatPath(inputPath)
-		if err != nil {
-			return err
-		}
-
 		// HASH_MACHINE
-		mHasher, err := hasher.NewHasher(hashAlgorithm, int(truncate))
+		mHasher, err := hasher.NewHasher(algorithm, int(truncate))
 		if err != nil {
 			return err
 		}

@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	ErrUnknownHashMethod = errors.New("hash method not valid")
+	ErrUnknownHashMethod = errors.New("not a valid/supported hash algorithm")
 )
 
 type Hasher struct {
@@ -30,7 +30,6 @@ type Hasher struct {
 }
 
 // TODO(8): Work on length/truncate flag
-// Chosse between "--hash SHA224 ..." or "--hash SHA2 --length 224"
 func NewHasher(algorithm string, length int) (*Hasher, error) {
 	switch algorithm {
 	case HashAlgorithmBlake2b:

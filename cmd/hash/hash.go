@@ -37,7 +37,7 @@ func HashFromPath(hasher *hasher.Hasher, recursive bool, inputPathInfo *filesyst
 		}
 
 		// Imprimir hash
-		clog.Inf("%s - %s", hash, inputPathInfo.Path())
+		clog.Infof("%s - %s", hash, inputPathInfo.Path())
 		return nil
 	}
 
@@ -87,7 +87,7 @@ func HashFromPath(hasher *hasher.Hasher, recursive bool, inputPathInfo *filesyst
 		}
 
 		// Imprimir hash
-		clog.Inf("%s - %s", hash, fileInfo.Path())
+		clog.Infof("%s - %s", hash, fileInfo.Path())
 		return nil
 	})
 }
