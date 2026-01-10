@@ -30,7 +30,12 @@ var mediatypeCmd = &cobra.Command{
 			return err
 		}
 
-		mimetype.CheckPath(inputPathInfo, ignoreExtMatch)
+		rename, err := cmd.Flags().GetBool("rename")
+		if err != nil {
+			return err
+		}
+
+		mimetype.CheckPath(inputPathInfo, ignoreExtMatch, rename)
 		if err != nil {
 			return err
 		}
@@ -44,4 +49,5 @@ func init() {
 
 	mediatypeCmd.Flags().StringP("input", "i", "./", "Path to DIR/FILE which will be verified")
 	mediatypeCmd.Flags().BoolP("ignore-ok", "w", false, "Ignore files if extension match mimetype")
+	mediatypeCmd.Flags().BoolP("rename", "R", false, "Rename file extensions")
 }
