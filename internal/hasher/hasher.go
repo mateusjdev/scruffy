@@ -6,7 +6,7 @@ import (
 	"errors"
 	"hash"
 	"io"
-	"mateusjdev/scruffy/cmd/filesystem"
+	"mateusjdev/scruffy/internal/filesystem"
 	"os"
 
 	"lukechampine.com/blake3"

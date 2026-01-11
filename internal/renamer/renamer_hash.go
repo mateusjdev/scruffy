@@ -3,8 +3,8 @@ package renamer
 import (
 	"errors"
 	"fmt"
-	"mateusjdev/scruffy/cmd/filesystem"
-	"mateusjdev/scruffy/cmd/hasher"
+	"mateusjdev/scruffy/internal/filesystem"
+	"mateusjdev/scruffy/internal/hasher"
 	"path/filepath"
 	"strings"
 )

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"mateusjdev/scruffy/cmd/clog"
+	"mateusjdev/scruffy/internal/clog"
 
 	"github.com/spf13/cobra"
 )

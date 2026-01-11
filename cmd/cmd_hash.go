@@ -3,10 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/filesystem"
-	"mateusjdev/scruffy/cmd/hash"
-	"mateusjdev/scruffy/cmd/hasher"
+	"mateusjdev/scruffy/internal/clog"
+	"mateusjdev/scruffy/internal/filesystem"
+	"mateusjdev/scruffy/internal/hash"
+	"mateusjdev/scruffy/internal/hasher"
 	"os"
 	"strings"
 

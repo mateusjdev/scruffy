@@ -2,8 +2,8 @@ package mimetype
 
 import (
 	"io/fs"
-	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/filesystem"
+	"mateusjdev/scruffy/internal/clog"
+	"mateusjdev/scruffy/internal/filesystem"
 	"path/filepath"
 
 	"github.com/gabriel-vasile/mimetype"

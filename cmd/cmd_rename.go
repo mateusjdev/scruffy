@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/filesystem"
-	"mateusjdev/scruffy/cmd/hasher"
-	"mateusjdev/scruffy/cmd/renamer"
+	"mateusjdev/scruffy/internal/clog"
+	"mateusjdev/scruffy/internal/filesystem"
+	"mateusjdev/scruffy/internal/hasher"
+	"mateusjdev/scruffy/internal/renamer"
 	"os"
 	"path/filepath"
 	"strings"

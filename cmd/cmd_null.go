@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"mateusjdev/scruffy/cmd/check"
-	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/filesystem"
+	"mateusjdev/scruffy/internal/check"
+	"mateusjdev/scruffy/internal/clog"
+	"mateusjdev/scruffy/internal/filesystem"
 
 	"github.com/spf13/cobra"
 )

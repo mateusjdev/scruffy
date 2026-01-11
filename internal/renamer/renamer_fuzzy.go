@@ -2,7 +2,7 @@ package renamer
 
 import (
 	"errors"
-	"mateusjdev/scruffy/cmd/filesystem"
+	"mateusjdev/scruffy/internal/filesystem"
 	"math/rand"
 	"path/filepath"
 	"strings"

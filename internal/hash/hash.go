@@ -2,9 +2,9 @@ package hash
 
 import (
 	"io/fs"
-	"mateusjdev/scruffy/cmd/clog"
-	"mateusjdev/scruffy/cmd/filesystem"
-	"mateusjdev/scruffy/cmd/hasher"
+	"mateusjdev/scruffy/internal/clog"
+	"mateusjdev/scruffy/internal/filesystem"
+	"mateusjdev/scruffy/internal/hasher"
 	"path/filepath"
 	"strings"
 )
