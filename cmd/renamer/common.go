@@ -1,7 +1,6 @@
 package renamer
 
 import (
-	"errors"
 	"io/fs"
 	"mateusjdev/scruffy/cmd/clog"
 	"mateusjdev/scruffy/cmd/filesystem"
@@ -68,57 +67,49 @@ func ReportOperation(options RenamerOptions, operation Operation, source *filesy
 }
 
 // TODO(14): Check need of path validation or continue to use CustomFileInfo
-func RenameFromPath(renamer Renamer, recursive bool, inputPathInfo, outputPathInfo *filesystem.PathInfo) error {
-	clog.Debugf("Enqueued: \"%s\"", inputPathInfo.Path())
-
-	if !outputPathInfo.IsDir() {
-		return errors.New("output is not a valid file or directory")
-	}
-
-	if inputPathInfo.IsRegularFile() {
-		clog.Debugf("Working on file \"%s\"", inputPathInfo.Path())
-		return renamer.renameFile(inputPathInfo, outputPathInfo)
-	}
-
-	if !inputPathInfo.IsDir() {
-		return errors.New("input is not a valid file or directory")
-	}
-
-	// TODO(21): Check WalkDir error/return
-	return filepath.WalkDir(inputPathInfo.Path(), func(path string, di fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if di.IsDir() {
-			if inputPathInfo.Path() == path {
-				return nil
+func RenameFromPath(
+	renamer Renamer,
+	recursive bool,
+	inputPathInfo *filesystem.PathInfo,
+	outputPathInfo *filesystem.PathInfo,
+) error {
+	return filepath.WalkDir(
+		inputPathInfo.Path(),
+		func(path string, di fs.DirEntry, err error) error {
+			if err != nil {
+				return err
 			}
 
-			if recursive {
-				recursePathInfo, err := filesystem.StatPath(path)
-				if err != nil {
-					return err
+			if di.IsDir() {
+				if inputPathInfo.Path() == path {
+					return nil
 				}
 
-				RenameFromPath(
-					renamer,
-					recursive,
-					recursePathInfo,
-					recursePathInfo,
-				)
+				// if --recursive, reuse walking directory instead of walking through files
+				if recursive {
+					recursePathInfo, err := filesystem.StatPath(path)
+					if err != nil {
+						return err
+					}
+
+					RenameFromPath(
+						renamer,
+						recursive,
+						recursePathInfo,
+						recursePathInfo,
+					)
+				}
+
+				return filepath.SkipDir
 			}
 
-			// Skip walk(dir) from --recuse anyway, this helps ensure destination folder will be respected
-			return filepath.SkipDir
-		}
+			fileInfo, err := filesystem.StatPath(path)
+			if err != nil {
+				return err
+			}
 
-		fileInfo, err := filesystem.StatPath(path)
-		if err != nil {
-			return err
-		}
-
-		clog.Debugf("Working on file \"%s\"", fileInfo.Path())
-		return renamer.renameFile(fileInfo, outputPathInfo)
-	})
+			clog.Debugf("Working on file \"%s\"", fileInfo.Path())
+			return renamer.renameFile(fileInfo, outputPathInfo)
+		},
+	)
 }

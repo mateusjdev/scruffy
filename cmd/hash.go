@@ -7,6 +7,7 @@ import (
 	"mateusjdev/scruffy/cmd/filesystem"
 	"mateusjdev/scruffy/cmd/hash"
 	"mateusjdev/scruffy/cmd/hasher"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,24 @@ import (
 var hashCmd = &cobra.Command{
 	Use:   "hash",
 	Short: "Check hash of files.",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			return err
+		}
+
+		quiet, err := cmd.Flags().GetBool("quiet")
+		if err != nil {
+			return err
+		}
+
+		if debug || quiet {
+			clog.Warningf("Nothing to do!")
+			os.Exit(0)
+		}
+
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		clog.Debugf("Starting module::%s", cmd.Use)
 
@@ -85,12 +104,7 @@ var hashCmd = &cobra.Command{
 		}
 
 		// PATH_WALK
-		err = hash.HashFromPath(mHasher, recursive, inputPathInfo, truncate, uppercase)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return hash.HashFromPath(mHasher, recursive, inputPathInfo, truncate, uppercase)
 	},
 }
 

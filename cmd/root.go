@@ -18,8 +18,15 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
+		quiet, err := cmd.Flags().GetBool("quiet")
+		if err != nil {
+			return err
+		}
+
 		if debug {
 			clog.SetLogLevel(clog.LevelDebug)
+		} else if quiet {
+			clog.SetLogLevel(clog.LevelWarning)
 		}
 
 		return nil
@@ -31,10 +38,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("debug", "D", false, "Set log-level to debug")
 
 	// Sets LogLevel to Warning
-	rootCmd.PersistentFlags().BoolP("silent", "s", false, "Set log-level to warning (some scripts will run way faster!)")
+	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Set log-level to warning (some scripts will run way faster!)")
 
 	// TODO(9): Check the need to configure LogLevel via flag (Ex: --log-level DEBUG, INFO, WARNING, ERROR)
-	rootCmd.MarkFlagsMutuallyExclusive("debug", "silent")
+	rootCmd.MarkFlagsMutuallyExclusive("debug", "quiet")
 }
 
 func Execute() {

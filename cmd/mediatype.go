@@ -30,24 +30,30 @@ var mediatypeCmd = &cobra.Command{
 			return err
 		}
 
-		rename, err := cmd.Flags().GetBool("rename")
+		allowRename, err := cmd.Flags().GetBool("rename")
 		if err != nil {
 			return err
 		}
 
-		mimetype.CheckPath(inputPathInfo, ignoreExtMatch, rename)
+		recursive, err := cmd.Flags().GetBool("recursive")
 		if err != nil {
 			return err
 		}
 
-		return nil
+		return mimetype.CheckPath(
+			inputPathInfo,
+			ignoreExtMatch,
+			allowRename,
+			recursive,
+		)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(mediatypeCmd)
 
-	mediatypeCmd.Flags().StringP("input", "i", "./", "Path to DIR/FILE which will be verified")
-	mediatypeCmd.Flags().BoolP("ignore-ok", "w", false, "Ignore files if extension match mimetype")
-	mediatypeCmd.Flags().BoolP("rename", "R", false, "Rename file extensions")
+	mediatypeCmd.Flags().StringP("input", "i", "./", "Path to DIR/FILE which will be verified.")
+	mediatypeCmd.Flags().BoolP("ignore-ok", "w", false, "Ignore files if extension match mimetype.")
+	mediatypeCmd.Flags().BoolP("rename", "R", false, "Rename file extensions.")
+	mediatypeCmd.Flags().BoolP("recursive", "r", false, "Recurse DIRs.")
 }

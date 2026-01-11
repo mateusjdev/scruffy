@@ -34,19 +34,25 @@ var nullCmd = &cobra.Command{
 			return err
 		}
 
-		err = check.CheckPathForEmptyFiles(inputPathInfo, true, allowRename, ignoreNonEmpty)
+		recursive, err := cmd.Flags().GetBool("recursive")
 		if err != nil {
 			return err
 		}
 
-		return nil
+		return check.CheckPathForEmptyFiles(
+			inputPathInfo,
+			recursive,
+			allowRename,
+			ignoreNonEmpty,
+		)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(nullCmd)
 
-	nullCmd.Flags().StringP("input", "i", "./", "Path to FILE which will be verified")
+	nullCmd.Flags().StringP("input", "i", "./", "Path to DIR/FILE which will be verified.")
 	nullCmd.Flags().BoolP("ignore-ok", "w", false, "Ignore files if has content.")
-	nullCmd.Flags().BoolP("rename", "R", false, "Mark file extension as .empty")
+	nullCmd.Flags().BoolP("rename", "R", false, "Mark file extension as .empty.")
+	nullCmd.Flags().BoolP("recursive", "r", false, "Recurse DIRs.")
 }
